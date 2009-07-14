@@ -1,0 +1,72 @@
+{% load ledger %}
+
+<table id='exchanges'>
+{% regroup exchanges by type as type_list %}
+
+{% for type in type_list %}
+	<tr>
+		<th class='type' colspan='5'>
+			<h2>{{ type.grouper }}s</h2>
+
+		</th>
+	</tr>
+	<tr>
+		{% if show_delivered_column %}
+			<th>&nbsp;</th>
+		{% endif %}
+		<th>ID</th>
+		<th>Date</th>
+		<th>Memo</th>
+		<th class='ledger number'>Total</th>
+	</tr>
+	{% for exchange in type.list %}
+		<tr>
+			{% if show_delivered_column %}
+				<td class='ledger delivered'>
+				{% if exchange.type.deliverable %}
+					{% if exchange.delivered %}
+						<img alt='Delivered Exchange' title='Delivered Exchange' src='{{ MEDIA_URL }}images/icons/accept.png'/>
+					{% else %}
+						<img alt='Undelivered Exchange' title='Undelivered Exchange' src='{{ MEDIA_URL }}images/icons/exclamation.png'/>
+					{% endif %}
+				{% endif %}
+				</td>
+			{% endif %}
+			<td>
+			{% if perms.ledger.change_exchange %}
+				<a href='{% url edit_exchange exchange_id=exchange.id,exchange_type_slug=exchange.type.slug %}?next={{ request.path }}'>{{ exchange.id }}</a>
+			{% else %}
+				{{ exchange.id }}
+			{% endif %}
+			</td>
+			<td>{{ exchange.date }}</td>
+			<td class='ledger memo'>{{ exchange.memo|truncatewords:"8" }}</td>
+			<td class='ledger number total'>${{ exchange.total|currency }}</td>
+			<td class='ledger links'>
+				<a href='{% url view_exchange_as_pdf exchange_id=exchange.id %}' title='View {{ exchange.type.label }} as PDF'><img alt='{{ exchange.type.label }} PDF' src='{{ MEDIA_URL }}images/icons/page_white_acrobat.png'/></a>
+			{% if exchange.type.deliverable and perms.ledger.email_exchange %}
+				<a href='{% url email_exchange exchange_id=exchange.id %}?next={{ request.path }}' title='E-mail {{ exchange.type.label }}'><img alt='E-mail {{ exchange.type.label }}' src='{{ MEDIA_URL }}images/icons/email_go.png'/></a>
+			{% endif %}
+			</td>
+			<td class='ledger links'>
+			{% if perms.ledger.add_exchange and perms.ledger.change_exchange %}
+				<a href='{% url duplicate_exchange exchange_id=exchange.id %}?next={{ request.path }}' title='Duplicate {{ exchange.type.label }}'><img alt='{{ exchange.type.label }} PDF' src='{{ MEDIA_URL }}images/icons/report_add.png'/></a>
+			{% endif %}
+			</td>
+			
+		</tr>
+	{% endfor %}
+{% endfor %}
+{% if project %}
+		<tr>
+			<th colspan='4' class='ledger outstanding-balance'>Outstanding Balance:</th>
+			<td class='ledger number total'>${{ project.balance|currency }}</td>
+			<td class='ledger links'>
+				<a href='{% url show_project_report project_id=project.id %}' title='View Project Report as PDF'><img alt='Project Report PDF' src='{{ MEDIA_URL }}images/icons/page_white_acrobat.png'/></a>
+			{% if perms.crm.email_project_report %}
+				<a href='{% url email_project_report project_id=project.id %}?next={{ request.path }}' title='E-mail Project Report'><img alt='E-mail Project Report' src='{{ MEDIA_URL }}images/icons/email_go.png'/></a>
+			{% endif %}
+			</td>
+		</tr>
+{% endif %}
+</table>
