@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load markup %}
+
+{% block title %}{{ person }}{% endblock %}
+
+{% block content %}
+<h2>{{ person }}</h2>
+<ul class='header-actions-left'>
+{% if perms.auth.change_user %}
+	<li><a href='{% url edit_person person_id=person.id %}?next={% url view_person person_id=person.id %}'>Edit Person</a></li>
+{% endif %}
+</ul>
+
+<table class='vertical' id='person-profile'>
+	<tr>
+		<th>Email:</th>
+		<td><a href='mailto:{{ person.user.email }}'>{{ person.user.email }}</a></td>
+	</tr>
+{% for phone in person.phones.all %}
+	<tr>
+		<th>{{ phone.type|capfirst }}:</th>
+		<td><a href='sip://1-{{ phone }}'>{{ phone }}</a></td>
+	</tr>
+{% endfor %}
+	<tr>
+		<th>Notes:</th>
+		<td>{{ person.notes|textile }}</td>
+	</tr>
+</table>
+
+{% ifnotequal person.user.projects.count 0 %}
+	<h3>Projects</h3>
+	<ul class='projects person'>
+	{% for project in person.user.projects.all.select_related %}
+		<li><a href='{% url view_project business_id=project.business.id,project_id=project.id %}'>{{ project.name }}</a> ({{ project.business.name }})</li>
+	{% endfor %}
+	</ul>
+{% endifnotequal %}
+
+{% ifnotequal person.user.businesses.count 0 %}
+	<h3>Businesses</h3>
+	<ul class='businesses person'>
+	{% for business in person.user.businesses.all.select_related %}
+		<li><a href='{% url view_business business_id=business.id %}'>{{ business.name }}</a></li>
+	{% endfor %}
+	</ul>
+{% endifnotequal %}
+
+<h3>Recent Interactions</h3>
+<ul class='header-actions-left'>
+{% if perms.crm.add_interaction %}
+	<li><a href='{% url create_interaction person_id=person.id %}?next={{ request.path }}'>New Interaction</a></li>
+{% endif %}
+</ul>
+{% include 'crm/interaction/_list.html' %}
+</table>
+
+<br style='clear: both;' />
+
+{% endblock %}

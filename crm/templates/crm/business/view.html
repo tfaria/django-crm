@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}{{ business }}{% endblock %}
+
+{% block javascript %}
+	<script src="{{ MEDIA_URL }}js/mootools-1.2-more.js" type="text/javascript"></script>
+	<script type="text/javascript" defer="defer">
+	// <![CDATA[
+	window.addEvent('domready', function (event) {
+		var add_contact_slider = new Fx.Slide('add-contact');
+		add_contact_slider.hide();
+		
+		$('toggle-add-contact').addEvent('click', function (e) {
+			e.stop();
+			add_contact_slider.toggle();
+			if (!add_contact_slider.open) {
+				$('id_search').focus();
+			}
+		});
+	});
+	// ]]>
+	</script>
+{% endblock %}
+
+{% block content %}
+<h2>{{ business }}</h2>
+<ul class='header-actions-left'>
+{% if perms.crm.change_business %}
+	<li><a href='{% url edit_business business_id=business.id %}?next={% url view_business business_id=business.id %}'>Edit</a></li>
+{% endif %}
+{% if perms.ledger.add_exchange %}
+	{% for type in business.exchange_types %}
+	<li><a href='{% url create_exchange exchange_type_slug=type.slug,business_id=business.id %}?next={% url view_business business_id=business.id %}'>{{ type.label }}</a></li>
+	{% endfor %}
+{% endif %}
+</ul>
+
+<div id='sidebar'>
+	<h3>Contacts</h3>
+	<ul class='people'>
+	{% ifnotequal business.contacts.count 0 %}
+	{% for contact in business.contacts.select_related.all %}
+		<li>
+			<a href='{% url view_person person_id=contact.get_profile.id %}'>{{ contact.get_full_name }}</a>
+			<a title='Remove {{ contact.get_full_name }}' href='{% url associate_contact business_id=business.id,user_id=contact.id,action="remove" %}?next={% url view_business business_id=business.id %}'><img alt='Remove {{ contact.get_full_name }}' src='{{ MEDIA_URL }}images/icons/delete.png' /></a>
+		</li>
+	{% endfor %}
+	{% endifnotequal %}
+		<li class='add'>
+			<div><a id='toggle-add-contact' href='#'>Add contact</a></div>
+			<form id="add-contact" action='{% url associate_contact business_id=business.id,action="add" %}?next={% url view_business business_id=business.id %}' method="post" accept-charset="utf-8">
+				<div class="field-wrapper">
+					{{ add_contact_form.search.errors }}
+					<label for="id_search">Search:</label>
+					{{ add_contact_form.search|safe }}
+					<input type="submit" name="submit" value="Add" id="submit" />
+				</div>
+			</form>
+		</li>
+	
+	</ul>
+</div>
+
+{% if business.address %}
+	<p>{{ business.address }}</p>
+{% endif %}
+{% if business.notes %}
+	<p>{{ business.notes }}</p>
+{% endif %}
+
+{% ifequal business.projects.count 0 %}
+	<p>No projects exist for this business.  <a href='{% url create_project business_id=business.id %}'>Create one now...</a></p>
+{% else %}
+	<h3>Projects</h3>
+	<table class='businesses'>
+		<tr>
+			<th>Name</th>
+			<th>Type</th>
+			<th>Status</th>
+			<th>Point Person</th>
+			<th>Description</th>
+		</tr>
+		{% for project in business.projects.all %}
+		<tr>
+			<td><a href='{% url view_project business_id=business.id,project_id=project.id %}'>{{ project.name }}</a></td>
+			<td>{{ project.type }}</td>
+			<td>{{ project.status }}</td>
+			<td>{{ project.point_person }}</td>
+			<td>{{ project.description }}</td>
+		</tr>
+		{% endfor %}
+	</table>
+	<p>
+		<a href='{% url create_project business_id=business.id %}'>New project for {{ business }}...</a>
+	</p>
+{% endifequal %}
+
+{% include 'crm/business/_exchange_list.html' %}
+
+{% endblock %}

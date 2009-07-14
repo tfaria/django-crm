@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{% if not business %}Create Business{% else %}Edit {{ business }}{% endif %}{% endblock %}
+
+{% block content %}
+
+<h2>{% if not business %}Create Business{% else %}Edit {{ business }}{% endif %}</h2>
+
+<form id="create-edit-business" action="" method="post" accept-charset="utf-8">
+	<table class='vertical'>
+		{{ business_form }}
+		{{ address_form }}
+		<tr>
+			<td>&nbsp;</td>
+			<td class='submit'>
+				<input type='button' value='Cancel' onclick='history.go(-1)' />
+				&nbsp;
+				<input type='submit' name='submit' value='Save &rarr;' />
+			</td>
+		</tr>
+	</table>
+</form>
+
+{% endblock %}

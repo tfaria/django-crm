@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load crm_tags %}
+
+{% block title %}{{ project }}{% endblock %}
+
+{% block javascript %}
+	<script src="{{ MEDIA_URL }}js/mootools-1.2-more.js" type="text/javascript"></script>
+	<script type="text/javascript" defer="defer">
+	// <![CDATA[
+	window.addEvent('domready', function (event) {
+		var add_contact_slider = new Fx.Slide('add-contact');
+		add_contact_slider.hide();
+		
+		$('toggle-add-contact').addEvent('click', function (e) {
+			e.stop();
+			add_contact_slider.toggle();
+			if (!add_contact_slider.open) {
+				$('id_search').focus();
+			}
+		});
+	});
+	// ]]>
+	</script>
+{% endblock %}
+
+{% block content %}
+<h2>{{ project }}</h2>
+<ul class='header-actions-left'>
+{% if perms.crm.change_project %}
+	<li><a href='{% url edit_project business_id=project.business.id,project_id=project.id %}'>Edit project</a></li>
+{% endif %}
+{% if perms.ledger.add_exchange %}
+	<li><a href='{% url create_exchange exchange_type_slug="invoice",business_id=project.business.id,project_id=project.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'>Invoice</a></li>
+	<li><a href='{% url create_exchange exchange_type_slug="receipt",business_id=project.business.id,project_id=project.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'>Receipt</a></li>
+{% endif %}
+	<li><a href='{% url view_business business_id=project.business.id %}'>Return to {{ project.business.name }}</a></li>
+</ul>
+
+<div id='sidebar'>
+	<h3>Contacts</h3>
+	<ul class='people'>
+	{% ifnotequal project.contacts.count 0 %}
+	{% for contact in project.contacts.select_related.all %}
+		<li>
+			<a href='{% url view_person person_id=contact.get_profile.id %}'>{{ contact.get_full_name }}</a>
+			<a title="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship business_id=project.business.id,project_id=project.id,user_id=contact.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" src='{{ MEDIA_URL }}images/icons/pencil.png' /></a>
+			<a title='Remove {{ contact.get_full_name }}' href='{% url associate_contact business_id=project.business.id,project_id=project.id,user_id=contact.id,action="remove" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt='Remove {{ contact.get_full_name }}' src='{{ MEDIA_URL }}images/icons/delete.png' /></a>
+			{# {{ contact|project_relationship:project }} #}
+		</li>
+	{% endfor %}
+	{% endifnotequal %}
+		<li class='add'>
+			<div><a id='toggle-add-contact' href='#'>Add contact</a></div>
+			<form id="add-contact" action='{% url associate_contact business_id=project.business.id,project_id=project.id,action="add" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}' method="post" accept-charset="utf-8">
+				<div class="field-wrapper">
+					{{ add_contact_form.search.errors }}
+					<label for="id_search">Search:</label>
+					{{ add_contact_form.search|safe }}
+					<input type="submit" name="submit" value="Add" id="submit" />
+				</div>
+			</form>
+		</li>
+	
+	</ul>
+</div>
+
+{% if project.address %}
+	<p>{{ project.address }}</p>
+{% endif %}
+{% if project.notes %}
+	<p>{{ project.notes }}</p>
+{% endif %}
+
+{% if exchanges %}
+<h3>Exchanges</h3>
+{% if exchange_type %}
+	{% load pagination_tags %}
+	{% autopaginate exchanges %}
+{% endif %}
+
+{% paginate %}
+{% regroup exchanges by type as type_list %}
+{% include 'crm/business/_exchange_list.html' %}
+{% endif %}
+
+{% endblock %}

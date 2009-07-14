@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load ledger %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+{% load humanize %}
+<div id="right-panel">
+	<div id="inner-right-panel">
+		{% if perms.crm.view_todo_list %}
+		<h2>To Do Items</h2>
+		{% load cms %}
+		{% pagelet 'todo' %}
+		{% endif %}
+		
+		<h2>My Projects</h2>
+	{% if perms.crm.view_project %}
+		<ul class='header-actions-left'>
+			<li><a href='{% url list_projects %}'>View All</a></li>
+		</ul>
+	{% endif %}
+		<ul class='projects person'>
+		{% ifequal projects.count 0 %}
+			You don't have any projects yet.
+		{% else %}
+			{% for project in projects %}
+				<li>
+				{% if perms.crm.view_project %}
+					<a href='{% url view_project business_id=project.business.id,project_id=project.id %}'>{{ project.name }}</a>
+				{% else %}
+					{{ project.name }}
+				{% endif %}
+					{% if project.trac_environment %}
+						<span class='trac-options'>(<a href='{{ project.trac_url}}roadmap'>roadmap</a>,  <a href='{{ project.trac_url }}newticket'>create ticket</a>)</span>
+					{% endif %}
+				</li>
+			{% endfor %}
+		{% endifequal %}
+		</ul>
+	
+    
+	{% if recent_exchanges %}
+		<table id='recent-exchanges'>
+			<caption>Recent Exchanges</caption>
+			{% for exchange in recent_exchanges %}
+				<tr>
+					<td><a href='{% url edit_exchange exchange_id=exchange.id,exchange_type_slug=exchange.type.slug %}'>{{ exchange.id }}</a></td>
+					<td>{{ exchange.date|naturalday }}</td>
+					<td class='ledger number'>${{ exchange.total|currency }}</td>
+					<td>{{ exchange.memo }} <span class='exchange-type'>({{ exchange.type }})</span></td>
+				</tr>
+			{% endfor %}
+		</table>
+	{% endif %}
+	</div>
+</div>
+
+<div id="left-panel">
+	<div id="inner-left-panel">
+		<h2>Upcoming Interactions</h2>
+	{% if perms.crm.view_interaction %}
+		<ul class='header-actions-left'>
+			<li><a href='{% url list_interactions %}'>All Interactions</a></li>
+		</ul>
+	{% endif %}
+		{% with upcoming_interactions as interactions %}
+		{% include "crm/interaction/_list.html" %}
+		{% endwith %}
+		
+		<h2>Recent Interactions</h2>
+	{% if perms.crm.view_interaction %}
+		<ul class='header-actions-left'>
+			<li><a href='{% url list_interactions %}'>All Interactions</a></li>
+		</ul>
+	{% endif %}
+		{% with recent_interactions as interactions %}
+		{% include "crm/interaction/_list.html" %}
+		{% endwith %}
+	</div>
+</div>
+
+{% endblock %}

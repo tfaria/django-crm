@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}{% if interaction %}Update {{ interaction }}{% else %}Add new interaction{% if person %} for {{ person.user.get_full_name }}{% endif %}{% endif %}{% endblock %}
+
+{% block javascript %}
+{{ form.media|safe }}
+{% endblock %}
+
+{% block content %}
+
+<h2>{% if interaction %}Update {{ interaction }}{% else %}Add new interaction{% if person %} for {{ person.user.get_full_name }}{% endif %}{% endif %}</h2>
+
+<form id='create-edit-interaction' accept-charset='UTF-8' method='post' action=''>
+	<table class='vertical'>
+		{{ form }}
+		<tr>
+			<td>&nbsp;</td>
+			<td class='submit'>
+				<input type='button' value='Cancel' onclick='history.go(-1)' />
+				&nbsp;
+				<input type='submit' name='submit' value='{% if user %}Update{% else %}Create{% endif %} &rarr;' />
+			</td>
+		</tr>
+	</table>
+</form>
+
+{% endblock %}

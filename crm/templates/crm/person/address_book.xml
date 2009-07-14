@@ -1,0 +1,13 @@
+<?xml version='1.0' ?>
+<AddressBook>
+{% for contact in contacts %}
+    <Contact>
+        <LastName>{{ contact.user.last_name }}</LastName>
+        <FirstName>{{ contact.user.first_name }}</FirstName>
+        <Phone>
+            <phonenumber>{{ contact.primary_phone }}</phonenumber>
+            <accountindex>0</accountindex>
+        </Phone>
+    </Contact>    
+{% endfor %}
+</AddressBook>
