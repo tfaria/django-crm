@@ -191,8 +191,8 @@ def create_edit_person(request, person_id=None):
         phones = {}
         
     phone_forms = []
+    user_form = crm_forms.PersonForm(request, instance=user)
     if request.POST:
-        user_form = crm_forms.PersonForm(request.POST, instance=user)
         profile_form = crm_forms.ProfileForm(request.POST, instance=profile)
         for type, display in crm.Phone.PHONE_TYPES:
             phone = phones.get(type, None)
@@ -233,7 +233,6 @@ def create_edit_person(request, person_id=None):
                 )
             )
     else:
-        user_form = crm_forms.PersonForm(instance=user)
         profile_form = crm_forms.ProfileForm(instance=profile)
         for type, display in crm.Phone.PHONE_TYPES:
             phone = phones.get(type, None)
