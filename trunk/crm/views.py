@@ -248,8 +248,8 @@ def create_edit_person(request, person_id=None):
 @transaction.commit_on_success
 @render_with('crm/person/register.html')
 def register_person(request):
+    form = crm_forms.PersonForm(request)
     if request.POST:
-        form = crm_forms.PersonForm(request.POST)
         if form.is_valid():
             email = {
                 'template': 'crm/person/new_account_email.txt',
@@ -258,8 +258,6 @@ def register_person(request):
             }
             user = form.save(email)
             return HttpResponseRedirect(reverse('auth_login'))
-    else:
-        form = crm_forms.PersonForm()
 
     context = {
         'form': form,

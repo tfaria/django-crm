@@ -8,7 +8,7 @@ Password: {{ password }}
 
 To login and change your password now, visit:
 
-{{ app_url_base }}{% url change_password %}?next={% url dashboard %}
+{{ app_url_base }}{% url change_password %}?next={% url crm_dashboard %}
 
 Thanks!
 
