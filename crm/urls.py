@@ -20,7 +20,7 @@ import crm.views as views
 
 urlpatterns = patterns('',
     
-    url(r'^dashboard/$', views.dashboard, name='dashboard'),
+    url(r'^dashboard/$', views.dashboard, name='crm_dashboard'),
     
     url(r'^search/$', views.quick_search, name='quick_search'),
     
