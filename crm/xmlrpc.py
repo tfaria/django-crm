@@ -35,14 +35,14 @@ except:
     dispatcher = SimpleXMLRPCDispatcher()
 
 
-@has_perm_or_basicauth('crm.access_xmlrpc', realm='minibooks XML-RPC Service')
+@has_perm_or_basicauth('crm.access_xmlrpc', realm='django-crm XML-RPC Service')
 def rpc_handler(request):
     response = HttpResponse()
     
     if len(request.POST):
         response.write(dispatcher._marshaled_dispatch(request.raw_post_data))
     else:
-        response.write("<b>This is the minibooks XML-RPC Service.</b><br>")
+        response.write("<b>This is the django-crm XML-RPC Service.</b><br>")
         response.write("You need to invoke it using an XML-RPC Client!<br>")
         response.write("The following methods are available:<ul>")
         for method in dispatcher.system_listMethods():
