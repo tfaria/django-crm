@@ -66,7 +66,7 @@ class PhoneForm(forms.ModelForm):
     
     class Meta:
         model = crm.Phone
-        fields = ('number')
+        fields = ('number', )
     
     @requires_kwarg('type')
     def __init__(self, *args, **kwargs):

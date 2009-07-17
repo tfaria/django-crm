@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load ledger %}
+{#% load ledger %#}
 
 {% block title %}Dashboard{% endblock %}
 
@@ -8,12 +8,6 @@
 {% load humanize %}
 <div id="right-panel">
 	<div id="inner-right-panel">
-		{% if perms.crm.view_todo_list %}
-		<h2>To Do Items</h2>
-		{% load cms %}
-		{% pagelet 'todo' %}
-		{% endif %}
-		
 		<h2>My Projects</h2>
 	{% if perms.crm.view_project %}
 		<ul class='header-actions-left'>
@@ -38,20 +32,9 @@
 			{% endfor %}
 		{% endifequal %}
 		</ul>
-	
     
 	{% if recent_exchanges %}
-		<table id='recent-exchanges'>
-			<caption>Recent Exchanges</caption>
-			{% for exchange in recent_exchanges %}
-				<tr>
-					<td><a href='{% url edit_exchange exchange_id=exchange.id,exchange_type_slug=exchange.type.slug %}'>{{ exchange.id }}</a></td>
-					<td>{{ exchange.date|naturalday }}</td>
-					<td class='ledger number'>${{ exchange.total|currency }}</td>
-					<td>{{ exchange.memo }} <span class='exchange-type'>({{ exchange.type }})</span></td>
-				</tr>
-			{% endfor %}
-		</table>
+        {#% include 'books/ledger/_recent_exchanges.html' %#}
 	{% endif %}
 	</div>
 </div>
