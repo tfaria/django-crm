@@ -27,7 +27,7 @@ MENUITEMS = {
         (
             (_('Caktus Books'), 'crm_home'),
             (_('Interactions'), 'interactions'),
-            (_('Ledger'), 'dashboard'),
+            (_('Ledger'), 'crm_dashboard'),
             (_('Admin'), 'django.contrib.admin.views.main.index'),
         ),
 }
