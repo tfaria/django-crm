@@ -253,7 +253,7 @@ def register_person(request):
         if form.is_valid():
             email = {
                 'template': 'crm/person/new_account_email.txt',
-                'subject': 'Your minibooks account information',
+                'subject': 'Your account information',
                 'extra_context': { 'app_url_base': settings.APP_URL_BASE },
             }
             user = form.save(email)
