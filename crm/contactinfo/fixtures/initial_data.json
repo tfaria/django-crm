@@ -1,0 +1,18 @@
+[
+   {
+      "pk": 1, 
+      "model": "contactinfo.locationtype", 
+      "fields": {
+         "name": "Home", 
+         "slug": "home"
+      }
+   }, 
+   {
+      "pk": 2, 
+      "model": "contactinfo.locationtype", 
+      "fields": {
+         "name": "Office", 
+         "slug": "office"
+      }
+   }
+]
