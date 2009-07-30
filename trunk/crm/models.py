@@ -22,6 +22,7 @@ from django.conf import settings
 
 from caktus.django.db.util import slugify_uniquely
 
+from contactinfo import models as contactinfo
 
 class Address(models.Model):
     street = models.TextField()
@@ -41,6 +42,8 @@ class Profile(models.Model):
     user = models.ForeignKey(User, unique=True)
     notes = models.TextField(null=True, blank=True)
     picture = models.ImageField(null=True, blank=True, max_length=1048576, upload_to="picture/profile/")
+    
+    locations = models.ManyToManyField(contactinfo.Location)
     
     def primary_phone(self):
         for type in ('office', 'mobile', 'home'):
@@ -125,6 +128,8 @@ class Business(models.Model):
         blank=True,
         related_name='businesses',
     )
+    
+    locations = models.ManyToManyField(contactinfo.Location)
     
     objects = models.Manager()
     clients = BusinessManager('client')
