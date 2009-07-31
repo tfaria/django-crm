@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 
 {% block title %}{{ business }}{% endblock %}
 
@@ -69,7 +70,7 @@
 {% endif %}
 
 {% ifequal business.projects.count 0 %}
-	<p>No projects exist for this business.  <a href='{% url create_project business_id=business.id %}'>Create one now...</a></p>
+	<p>No projects exist for this {% trans "business" %}.  <a href='{% url create_project business_id=business.id %}'>Create one now...</a></p>
 {% else %}
 	<h3>Projects</h3>
 	<table class='businesses'>
