@@ -1,9 +1,11 @@
 {% extends "base.html" %}
-{% block title %}{% if not business %}Create Business{% else %}Edit {{ business }}{% endif %}{% endblock %}
+{% load i18n %}
+
+{% block title %}{% if not business %}Create {% trans "Business" %}{% else %}Edit {{ business }}{% endif %}{% endblock %}
 
 {% block content %}
 
-<h2>{% if not business %}Create Business{% else %}Edit {{ business }}{% endif %}</h2>
+<h2>{% if not business %}Create {% trans "Business" %}{% else %}Edit {{ business }}{% endif %}</h2>
 
 <form id="create-edit-business" action="" method="post" accept-charset="utf-8">
 	<table class='vertical'>

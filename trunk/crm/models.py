@@ -19,6 +19,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
 from django.contrib.localflavor.us import models as us_models
 from django.conf import settings
+from django.utils.translation import ugettext_lazy as _
 
 from caktus.django.db.util import slugify_uniquely
 
@@ -152,7 +153,8 @@ class Business(models.Model):
         return self.name
     
     class Meta:
-        verbose_name_plural = 'businesses'
+        verbose_name_plural = _('businesses')
+        verbose_name = _('business')
         ordering = ('name',)
         permissions = (
             ('view_business', 'Can view business'),
