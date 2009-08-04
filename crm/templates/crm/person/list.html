@@ -37,12 +37,14 @@
 		<td class='name'><a href='{% url view_person person_id=person.id %}'>{{ person.user.get_full_name }}</a></td>
 		<td><a href='mailto:{{ person.user.email }}'>{{ person.user.email }}</a></td>
 		<td class='phone'>
-		{% for phone in person.phones.all %}
-			<a href='sip://1-{{ phone }}'>{{ phone }}</a> ({{ phone.type }})
+    {% for location in person.locations.all %}
+        {% for phone in location.phones.all %}
+			<a href='sip://1-{{ phone }}'>{{ phone }}</a> ({{ location.type }} {{ phone.type }})
 			{% if not forloop.last %}
 				<br />
 			{% endif %}
 		{% endfor %}
+    {% endfor %}
 		</td>
 		<td>{{ person.notes }}</td>
 	</tr>

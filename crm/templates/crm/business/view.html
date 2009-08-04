@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load markup %}
 
 {% block title %}{{ business }}{% endblock %}
 
@@ -62,12 +63,32 @@
 	</ul>
 </div>
 
-{% if business.address %}
-	<p>{{ business.address }}</p>
-{% endif %}
-{% if business.notes %}
-	<p>{{ business.notes }}</p>
-{% endif %}
+<table class='vertical' id='business-profile'>
+{% for location in business.locations.all %}
+
+{% for address in location.addresses.all %}
+	<tr>
+		<th>{{ location.type|capfirst }} Address:</th>
+		<td>{{ address }}</td>
+	</tr>
+{% endfor %}
+
+{% for phone in location.phones.all %}
+	<tr>
+		<th>{{ location.type|capfirst }} {{ phone.type|capfirst }}:</th>
+		<td><a href='sip://1-{{ phone }}'>{{ phone }}</a></td>
+	</tr>
+{% endfor %}
+{% endfor %}
+    <tr>
+        <th>Description:</th>
+        <td>{{ business.description|textile }}</td>
+    </tr>
+	<tr>
+		<th>Notes:</th>
+		<td>{{ business.notes|textile }}</td>
+	</tr>
+</table>
 
 {% ifequal business.projects.count 0 %}
 	<p>No projects exist for this {% trans "business" %}.  <a href='{% url create_project business_id=business.id %}'>Create one now...</a></p>

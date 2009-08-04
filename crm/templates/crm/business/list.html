@@ -39,7 +39,7 @@
 	{% for business in businesses %}
 	<tr>
 		<td><a href='{% url view_business business_id=business.id %}'>{{ business.name }}</a></td>
-		<td>{{ business.address }}</td>
+		<td>{{ business.locations.all.0.addresses.all.0 }}</td>
 		<td>{{ business.notes }}</td>
 	</tr>
 	{% endfor %}

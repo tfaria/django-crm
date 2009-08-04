@@ -2,6 +2,14 @@
 
 {% block title %}{% if user %}Update {{ user.get_full_name }}{% else %}Add new person{% endif %}{% endblock %}
 
+{% block javascript %}
+{{ location_form.media }}
+{% endblock %}
+
+{% block css %}
+<link charset='UTF-8' rel='stylesheet' type='text/css' media='screen' href='{{ MEDIA_URL }}css/django-contactinfo.css' />
+{% endblock %}
+
 {% block content %}
 
 <h2>{% if user %}Update {{ user.get_full_name }}{% else %}Add new person{% endif %}</h2>
@@ -11,6 +19,7 @@
 		{% for form in forms %}
 			{{ form }}
 		{% endfor %}
+        {% include 'contactinfo/_create_edit_location.html' %}
 		<tr>
 			<td>&nbsp;</td>
 			<td class='submit'>

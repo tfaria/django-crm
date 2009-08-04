@@ -31,6 +31,9 @@ from caktus.django.forms import AutoCompleterForm
 from caktus.django.decorators import render_with
 from caktus.iter import all_true
 
+from contactinfo.helpers import create_edit_location
+from contactinfo import models as contactinfo
+
 from crm import models as crm
 from crm import forms as crm_forms
 
@@ -150,7 +153,7 @@ def list_people(request):
         # it'd be nice if we could grab 'phones' too, but that isn't supported:
         # http://code.djangoproject.com/ticket/6432
         'people': people.select_related('user').order_by('user__last_name'),
-        'phone_types': crm.Phone.PHONE_TYPES,
+        'phone_types': contactinfo.Phone.PHONE_TYPES,
     }
     return context
 
@@ -184,23 +187,26 @@ def create_edit_person(request, person_id=None):
     if person_id:
         profile = get_object_or_404(crm.Profile, pk=person_id)
         user = profile.user
-        phones = dict((p.type, p) for p in profile.phones.all())
+        try:
+            location = profile.locations.get()
+        except contactinfo.Location.DoesNotExist:
+            location = None
     else:
         user = None
         profile = None
-        phones = {}
-        
-    phone_forms = []
+        location = None
+    new_location = not location
+    
     user_form = crm_forms.PersonForm(request, instance=user)
     if request.POST:
         profile_form = crm_forms.ProfileForm(request.POST, instance=profile)
-        for type, display in crm.Phone.PHONE_TYPES:
-            phone = phones.get(type, None)
-            phone_form = crm_forms.PhoneForm(request.POST, instance=phone, type=type, prefix=type)
-            phone_forms.append(phone_form)
+        location, location_saved, location_context = create_edit_location(
+            request, 
+            location,
+            profile_form.is_valid() and user_form.is_valid(),
+        )
         
-        if user_form.is_valid() and profile_form.is_valid() and \
-          all_true([phone_form.is_valid() for phone_form in phone_forms]):
+        if location_saved:
             # no e-mail will be sent if dict is empty or None
             email = {
 #                'template': 'path/to/email/template.txt',
@@ -209,9 +215,9 @@ def create_edit_person(request, person_id=None):
             }
             saved_user, user_created = user_form.save(email)
             saved_profile = profile_form.save(user=saved_user)
-            for phone_form in phone_forms:
-                phone_form.save(profile=saved_profile)
             
+            if new_location:
+                saved_profile.locations.add(location)
             if user:
                 message = 'Person updated successfully'
             else:
@@ -234,14 +240,16 @@ def create_edit_person(request, person_id=None):
             )
     else:
         profile_form = crm_forms.ProfileForm(instance=profile)
-        for type, display in crm.Phone.PHONE_TYPES:
-            phone = phones.get(type, None)
-            phone_forms.append(crm_forms.PhoneForm(type=type, prefix=type, instance=phone))
-        
+        location, location_saved, location_context = create_edit_location(
+            request, 
+            location,
+            False,
+        )
     context = {
-        'forms': [user_form] + phone_forms + [profile_form],
+        'forms': [user_form, profile_form],
         'user': user,
     }
+    context.update(location_context)
     return context
 
 
@@ -406,7 +414,7 @@ def list_businesses(request):
     
     context = {
         'form': form,
-        'businesses': businesses.select_related('address'),
+        'businesses': businesses,
     }
     return context
 
@@ -455,38 +463,28 @@ def view_business(request, business):
 @permission_required('crm.change_business')
 @render_with('crm/business/create_edit.html')
 def create_edit_business(request, business=None):
-    address = business and business.address or None
-    
+    location = None
+    if business:
+        try:
+            location = business.locations.get()
+        except contactinfo.Location.DoesNotExist:
+            pass
+    new_location = not location
     if request.POST:
-        def check_for_address():
-            for field_name in ('city', 'zip', 'street'):
-                if bool(request.POST[field_name]):
-                    return True
-            return False
-        address_has_data = check_for_address()
-        if address_has_data:
-            address_form = crm_forms.AddressForm(
-                request.POST,
-                instance=address,
-            )
-        else:
-            address_form = crm_forms.AddressForm()
-        
         business_form = crm_forms.BusinessForm(
             request.POST,
             instance=business,
         )
-        
-        forms_valid = [business_form.is_valid()]
-        if address_has_data:
-            forms_valid.append(address_form.is_valid())
-        if all_true(forms_valid):
+        location, location_saved, location_context = create_edit_location(
+            request, 
+            location,
+            business_form.is_valid(),
+        )
+        if location_saved:
             new_business = not business
-            business = business_form.save(commit=False)
-            if address_has_data:
-                business.address = address_form.save()
-            business.save()
-            business_form.save_m2m()
+            business = business_form.save()
+            if new_location:
+                business.locations.add(location)
             if new_business:
                 return HttpResponseRedirect(
                     reverse(
@@ -498,13 +496,17 @@ def create_edit_business(request, business=None):
                 return HttpResponseRedirect(reverse('list_businesses'))
     else:
         business_form = crm_forms.BusinessForm(instance=business)
-        address_form = crm_forms.AddressForm(instance=address)
+        location, location_saved, location_context = create_edit_location(
+            request, 
+            location,
+            False,
+        )
     
     context = {
         'business': business,
-        'address_form': address_form,
         'business_form': business_form,
     }
+    context.update(location_context)
     return context
 
 

@@ -25,19 +25,6 @@ from caktus.django.db.util import slugify_uniquely
 
 from contactinfo import models as contactinfo
 
-class Address(models.Model):
-    street = models.TextField()
-    city = models.CharField(max_length=255)
-    state = us_models.USStateField()
-    zip = models.PositiveIntegerField()
-    
-    class Meta:
-        verbose_name_plural = 'addresses'
-    
-    def __unicode__(self):
-        return "%s, %s, %s %i" % \
-            (self.street, self.city, self.state, self.zip)
-
 
 class Profile(models.Model):
     user = models.ForeignKey(User, unique=True)
@@ -48,9 +35,10 @@ class Profile(models.Model):
     
     def primary_phone(self):
         for type in ('office', 'mobile', 'home'):
-            for phone in self.phones.all():
-                if phone.type == type:
-                    return phone
+            for location in self.user.locations.all():
+                for phone in location.phones.all():
+                    if phone.type == type:
+                        return phone
         
         return None
     
@@ -66,25 +54,6 @@ class Profile(models.Model):
     
     def __unicode__(self):
         return self.user.get_full_name()
-
-
-class Phone(models.Model):
-    PHONE_TYPES = (
-        ('home', 'Home'),
-        ('office', 'Office'),
-        ('mobile','Mobile'),
-        ('fax', 'Fax')
-    )
-    
-    profile = models.ForeignKey(Profile, related_name='phones')
-    type = models.CharField(max_length=15, choices=PHONE_TYPES)
-    number = us_models.PhoneNumberField()
-
-    class Meta:
-        unique_together = (('profile', 'type'),)
-    
-    def __unicode__(self):
-        return self.number
 
 
 class BusinessType(models.Model):
@@ -111,27 +80,34 @@ class BusinessManager(models.Manager):
 
 class Business(models.Model):
     name = models.CharField(max_length=255)
-    address = models.ForeignKey(Address, null=True, blank=True)
-    contacts = models.ManyToManyField(
-        User,
-        blank=True,
-        related_name='businesses',
-    )
-    notes = models.TextField(null=True, blank=True)
     logo = models.ImageField(
         null=True,
         blank=True,
         max_length=1048576,
         upload_to='picture/logo/',
     )
+    
+    description = models.TextField(null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    
     business_types = models.ManyToManyField(
         BusinessType,
         blank=True,
         related_name='businesses',
     )
-    
-    locations = models.ManyToManyField(contactinfo.Location)
-    
+    locations = models.ManyToManyField(
+        contactinfo.Location, 
+        related_name='businesses',
+    )
+    contacts = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name='businesses',
+    )
+    related_businesses = models.ManyToManyField(
+        'self',
+        blank=True,
+    )
     objects = models.Manager()
     clients = BusinessManager('client')
     vendors = BusinessManager('vendor')

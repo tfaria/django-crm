@@ -53,47 +53,6 @@ class ProfileForm(forms.ModelForm):
         instance.save()
         self.save_m2m()
         return instance
-    
-    
-class PhoneForm(forms.ModelForm):
-    """
-    Model form for Phones.  The required type argument to __init__ should be
-    one of the types defined in Phone.PHONE_TYPES, and the label on the
-    form field will be set accordingly.  The profile is passed into save()
-    instead of __init__ because it may not exist at the time __init__
-    is called.
-    """
-    
-    class Meta:
-        model = crm.Phone
-        fields = ('number', )
-    
-    @requires_kwarg('type')
-    def __init__(self, *args, **kwargs):
-        self.type = kwargs.pop('type')
-        super(PhoneForm, self).__init__(*args, **kwargs)
-        
-        self.fields['number'].label = \
-          dict(crm.Phone.PHONE_TYPES)[self.type]
-        if self.type != 'fax':
-            self.fields['number'].label += " phone"
-        self.fields['number'].required = False
-        
-    @transaction.commit_on_success
-    def save(self, profile):
-        instance = super(PhoneForm, self).save(commit=False)
-        new_instance = not instance.id
-        if self.cleaned_data['number']:
-            instance.profile = profile
-            instance.type = self.type
-            instance.save()
-            self.save_m2m()
-        else:
-            if not new_instance:
-                # if the number was removed, delete the instance
-                instance.delete()
-            instance = None
-        return instance
 
 
 class EmailForm(forms.Form):
@@ -195,7 +154,7 @@ class SearchForm(forms.Form):
 class BusinessForm(forms.ModelForm):
     class Meta:
         model = crm.Business
-        fields = ('name', 'notes', 'business_types')
+        fields = ('name', 'description', 'notes', 'business_types')
     
     def __init__(self, *args, **kwargs):
         super(BusinessForm, self).__init__(*args, **kwargs)
@@ -237,18 +196,6 @@ class ProjectForm(forms.ModelForm):
             instance.business = self.business
         instance.save()
         return instance
-
-
-class AddressForm(forms.ModelForm):
-    """
-    Model form for US postal addresses.
-    """
-    class Meta:
-        model = crm.Address
-        fields = ('street', 'city', 'state', 'zip',)
-    
-    def __init__(self, *args, **kwargs):
-        super(AddressForm, self).__init__(*args, **kwargs)
 
 
 class ProjectRelationshipForm(RequestModelForm):

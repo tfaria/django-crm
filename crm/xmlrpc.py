@@ -109,8 +109,13 @@ def callerid(number):
     number = '-'.join(parts)
     
     try:
-        user = User.objects.get(profile__phones__number=number)
+        user = User.objects.get(profile__locations__phones__number=number)
         return user.get_full_name()
     except User.DoesNotExist:
-        return number
+        try:
+            business = \
+              crm.Business.objects.get(locations__phones__number=number)
+            return business.name
+        except crm.Business.DoesNotExist:
+            return number
 dispatcher.register_function(callerid, 'callerid')

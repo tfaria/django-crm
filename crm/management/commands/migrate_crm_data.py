@@ -10,35 +10,8 @@ class Command(NoArgsCommand):
 
     @transaction.commit_on_success
     def handle_noargs(self, **options):
-        office = contactinfo.LocationType.objects.get(slug='office')
-        mobile = contactinfo.LocationType.objects.get(slug='mobile')
-        home = contactinfo.LocationType.objects.get(slug='home')
-        US = Country.objects.get(iso='US')
-        
-        for business in crm.Business.objects.all():
-            if business.address:
-                location = business.locations.create(type=office, country=US)
-                location.addresses.create(
-                    street=business.address.street,
-                    city=business.address.city,
-                    state_province=business.address.state,
-                    postal_code=business.address.zip,
-                )
-        
-        for profile in crm.Profile.objects.all():
-            qs = profile.phones.filter(type__in=('fax', 'office'))
-            if qs.count() > 0:
-                location = profile.locations.create(type=office, country=US)
-                for phone in qs:
-                    location.phones.create(type=phone.type, number=phone.number)
-            qs = profile.phones.filter(type='mobile')
-            if qs.count() > 0:
-                location = profile.locations.create(type=mobile, country=US)
-                for phone in qs:
-                    location.phones.create(type=phone.type, number=phone.number)
-            qs = profile.phones.filter(type='home')
-            if qs.count() > 0:
-                location = profile.locations.create(type=home, country=US)
-                for phone in qs:
-                    location.phones.create(type=phone.type, number=phone.number)
+        print """
+The models necessary to run this migration are no longer available.  Please
+revert to revision 11 (e.g., run `svn up -r11`) and try this command again.
+"""
                 
