@@ -78,6 +78,21 @@ class BusinessManager(models.Manager):
         )
 
 
+class RelationshipType(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    slug = models.CharField(max_length=255, unique=True, editable=False)
+    
+    def save(self):
+        queryset = RelationshipType.objects.all()
+        if self.id:
+            queryset = queryset.exclude(id__exact=self.id)
+        self.slug = slugify_uniquely(self.name, queryset, 'slug')
+        super(RelationshipType, self).save()
+    
+    def __unicode__(self):
+        return self.name
+
+
 class Business(models.Model):
     name = models.CharField(max_length=255)
     logo = models.ImageField(
@@ -99,10 +114,11 @@ class Business(models.Model):
         contactinfo.Location, 
         related_name='businesses',
     )
-    contacts = models.ManyToManyField(
+    related_people = models.ManyToManyField(
         User,
         blank=True,
         related_name='businesses',
+        through='BusinessRelationship',
     )
     related_businesses = models.ManyToManyField(
         'self',
@@ -134,6 +150,25 @@ class Business(models.Model):
         ordering = ('name',)
         permissions = (
             ('view_business', 'Can view business'),
+        )
+
+
+class BusinessRelationship(models.Model):
+    types = models.ManyToManyField(
+        RelationshipType,
+        related_name='business_relationships',
+        blank=True,
+    )
+    user = models.ForeignKey(User)
+    business = models.ForeignKey(Business)
+    
+    class Meta:
+        unique_together = ('user', 'business',)
+    
+    def __unicode__(self):
+        return "%s's relationship to %s" % (
+            self.business.name,
+            self.user.get_full_name(),
         )
 
 
@@ -179,7 +214,7 @@ class Project(models.Model):
 
 class ProjectRelationship(models.Model):
     types = models.ManyToManyField(
-        'ProjectRelationshipType',
+        RelationshipType,
         related_name='project_relationships',
         blank=True,
     )
@@ -194,21 +229,6 @@ class ProjectRelationship(models.Model):
             self.project.name,
             self.user.get_full_name(),
         )
-
-
-class ProjectRelationshipType(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    slug = models.CharField(max_length=255, unique=True, editable=False)
-    
-    def save(self):
-        queryset = ProjectRelationshipType.objects.all()
-        if self.id:
-            queryset = queryset.exclude(id__exact=self.id)
-        self.slug = slugify_uniquely(self.name, queryset, 'slug')
-        super(ProjectRelationshipType, self).save()
-    
-    def __unicode__(self):
-        return self.name
 
 
 class Interaction(models.Model):
