@@ -33,6 +33,6 @@ class BusinessTypeAdmin(admin.ModelAdmin):
 admin.site.register(crm.BusinessType, BusinessTypeAdmin)
 
 
-class ProjectRelationshipType(admin.ModelAdmin):
+class RelationshipType(admin.ModelAdmin):
     list_display = ('name', 'slug',)
-admin.site.register(crm.ProjectRelationshipType, ProjectRelationshipType)
+admin.site.register(crm.RelationshipType, RelationshipType)

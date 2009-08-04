@@ -59,6 +59,11 @@ urlpatterns = patterns('',
         views.create_edit_business,
         name='edit_business',
     ),
+    url(
+        r'^business/(?P<business_id>\d+)/contact/(?P<user_id>\d+)/edit/$',
+        views.edit_business_relationship,
+        name='edit_business_relationship',
+    ),
     
     # projects
     url(r'^project/list/$', views.list_projects, name='list_projects'),
@@ -84,7 +89,7 @@ urlpatterns = patterns('',
         name='associate_contact',
     ),
     url(
-        r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/contact/(?P<user_id>\w+)/edit/$',
+        r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/contact/(?P<user_id>\d+)/edit/$',
         views.edit_project_relationship,
         name='edit_project_relationship',
     ),

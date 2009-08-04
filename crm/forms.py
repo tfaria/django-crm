@@ -167,6 +167,19 @@ class BusinessForm(forms.ModelForm):
         self.fields['business_types'].help_text = '' 
 
 
+class BusinessRelationshipForm(RequestModelForm):
+    class Meta:
+        model = crm.BusinessRelationship
+        fields = ('types',)
+    
+    def __init__(self, *args, **kwargs):
+        super(BusinessRelationshipForm, self).__init__(*args, **kwargs)
+        self.fields['types'].widget = forms.CheckboxSelectMultiple(
+            choices=self.fields['types'].choices
+        )
+        self.fields['types'].help_text = ''
+
+
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = crm.Project
@@ -201,7 +214,7 @@ class ProjectForm(forms.ModelForm):
 class ProjectRelationshipForm(RequestModelForm):
     class Meta:
         model = crm.ProjectRelationship
-        fields = ('types')
+        fields = ('types',)
     
     def __init__(self, *args, **kwargs):
         super(ProjectRelationshipForm, self).__init__(*args, **kwargs)

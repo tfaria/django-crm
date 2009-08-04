@@ -43,8 +43,8 @@
 	{% for contact in project.contacts.select_related.all %}
 		<li>
 			<a href='{% url view_person person_id=contact.get_profile.id %}'>{{ contact.get_full_name }}</a>
-			<a title="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship business_id=project.business.id,project_id=project.id,user_id=contact.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" src='{{ MEDIA_URL }}images/icons/pencil.png' /></a>
-			<a title='Remove {{ contact.get_full_name }}' href='{% url associate_contact business_id=project.business.id,project_id=project.id,user_id=contact.id,action="remove" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt='Remove {{ contact.get_full_name }}' src='{{ MEDIA_URL }}images/icons/delete.png' /></a>
+			<a title="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship business_id=project.business.id,project_id=project.id,user_id=contact.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
+			<a title='Remove {{ contact.get_full_name }}' href='{% url associate_contact business_id=project.business.id,project_id=project.id,user_id=contact.id,action="remove" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt='Remove {{ contact.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
 			{# {{ contact|project_relationship:project }} #}
 		</li>
 	{% endfor %}

@@ -510,6 +510,29 @@ def create_edit_business(request, business=None):
     return context
 
 
+@permission_required('crm.change_business')
+@transaction.commit_on_success
+@render_with('crm/business/relationship.html')
+def edit_business_relationship(request, business, user_id):
+    user = get_object_or_404(User, id=user_id, businesses=business)
+    rel = \
+      get_object_or_404(crm.BusinessRelationship, business=business, user=user)
+    relationship_form = crm_forms.BusinessRelationshipForm(
+        request,
+        instance=rel,
+    )
+    if request.POST and relationship_form.is_valid():
+        rel = relationship_form.save()
+        return HttpResponseRedirect(request.REQUEST['next'])
+    
+    context = {
+        'user': user,
+        'business': business,
+        'relationship_form': relationship_form,
+    }
+    return context
+
+
 @permission_required('crm.view_project')
 @render_with('crm/business/project/list.html')
 def list_projects(request):
@@ -613,20 +636,25 @@ def associate_contact(request, business, project=None, user_id=None, action=None
                             project=project,
                         )
                     else:
-                        business.contacts.add(user)
+                        crm.BusinessRelationship.objects.get_or_create(
+                            user=user,
+                            business=business,
+                        )
                 except User.DoesNotExist:
                     user = None
     else:
         try:
             user = User.objects.get(pk=user_id)
             if project:
-                rel = crm.ProjectRelationship.objects.get(
+                crm.ProjectRelationship.objects.get(
                     user=user,
                     project=project,
-                )
-                rel.delete()
+                ).delete()
             else:
-                business.contacts.remove(user)
+                crm.BusinessRelationship.objects.get(
+                    user=user,
+                    business=business,
+                ).delete()
         except User.DoesNotExist, crm.ProjectRelationship.DoesNotExist:
             user = None
     
@@ -636,7 +664,7 @@ def associate_contact(request, business, project=None, user_id=None, action=None
 @permission_required('crm.change_project')
 @transaction.commit_on_success
 @render_with('crm/business/project/relationship.html')
-def edit_project_relationship(request, business, project, user_id=None):
+def edit_project_relationship(request, business, project, user_id):
     user = get_object_or_404(User, id=user_id, projects=project)
     rel = crm.ProjectRelationship.objects.get(project=project, user=user)
     relationship_form = crm_forms.ProjectRelationshipForm(
