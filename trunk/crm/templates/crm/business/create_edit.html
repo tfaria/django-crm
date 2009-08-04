@@ -3,6 +3,14 @@
 
 {% block title %}{% if not business %}Create {% trans "Business" %}{% else %}Edit {{ business }}{% endif %}{% endblock %}
 
+{% block javascript %}
+{{ location_form.media }}
+{% endblock %}
+
+{% block css %}
+<link charset='UTF-8' rel='stylesheet' type='text/css' media='screen' href='{{ MEDIA_URL }}css/django-contactinfo.css' />
+{% endblock %}
+
 {% block content %}
 
 <h2>{% if not business %}Create {% trans "Business" %}{% else %}Edit {{ business }}{% endif %}</h2>
@@ -10,7 +18,7 @@
 <form id="create-edit-business" action="" method="post" accept-charset="utf-8">
 	<table class='vertical'>
 		{{ business_form }}
-		{{ address_form }}
+        {% include 'contactinfo/_create_edit_location.html' %}
 		<tr>
 			<td>&nbsp;</td>
 			<td class='submit'>

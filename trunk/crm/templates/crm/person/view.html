@@ -16,11 +16,21 @@
 		<th>Email:</th>
 		<td><a href='mailto:{{ person.user.email }}'>{{ person.user.email }}</a></td>
 	</tr>
-{% for phone in person.phones.all %}
+{% for location in person.locations.all %}
+
+{% for address in location.addresses.all %}
 	<tr>
-		<th>{{ phone.type|capfirst }}:</th>
+		<th>{{ location.type|capfirst }} Address:</th>
+		<td>{{ address }}</td>
+	</tr>
+{% endfor %}
+
+{% for phone in location.phones.all %}
+	<tr>
+		<th>{{ location.type|capfirst }} {{ phone.type|capfirst }}:</th>
 		<td><a href='sip://1-{{ phone }}'>{{ phone }}</a></td>
 	</tr>
+{% endfor %}
 {% endfor %}
 	<tr>
 		<th>Notes:</th>
