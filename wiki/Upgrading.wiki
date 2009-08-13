@@ -7,6 +7,7 @@ Revisions after r11 will introduce a backwards incompatible change in the data m
 To successfully upgrade past r11, you need to complete the following steps:
 
  # svn up -r11
+ # ./manage.py syncdb
  # ./manage.py dbshell < apps/external_apps/crm/migrations/001_locations.sql
  # ./manage.py migrate_crm_data
  # svn up
