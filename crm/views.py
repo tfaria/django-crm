@@ -42,7 +42,7 @@ from crm import forms as crm_forms
 @render_with('crm/dashboard.html')
 def dashboard(request):
     # soonest first
-    upcoming_interactions = request.user.interactions.select_related(
+    upcoming_interactions = request.contact.interactions.select_related(
         'cdr',
         'contacts',
         'project',
@@ -50,14 +50,14 @@ def dashboard(request):
     ).filter(completed=False).order_by('date')
     
     # most recent first
-    recent_interactions = request.user.interactions.select_related(
+    recent_interactions = request.contact.interactions.select_related(
         'cdr',
         'contacts',
         'project',
         'project__business',
     ).filter(completed=True)[:6]
     
-    projects = request.user.projects.order_by(
+    projects = request.contact.project_contacts.order_by(
         'name',
     ).select_related('business')
     
@@ -72,7 +72,8 @@ def dashboard(request):
         # there are no permissions on this view, so all DB access
         # must filter by request.user
         context['recent_exchanges'] = Exchange.objects.filter(
-            business__contacts=request.user
+            business__type='business',
+            business__contacts=request.contact,
         ).select_related('type', 'business')[:10]
     except ImportError:
         pass
@@ -91,7 +92,8 @@ def quick_search(request):
     results = []
     if request.POST:
         if request.user.has_perm('crm.view_business'):
-            for business in crm.Business.objects.filter(
+            for business in crm.Contact.objects.filter(
+                type='business',
                 name__icontains=request.REQUEST['search'],
             ):
                 results.append({
@@ -114,17 +116,18 @@ def quick_search(request):
                     'element_class': 'project',
                 })
         if request.user.has_perm('crm.view_profile'):
-            for profile in crm.Profile.objects.filter(
-                Q(user__first_name__icontains=request.REQUEST['search']) | 
-                Q(user__last_name__icontains=request.REQUEST['search']) |
-                Q(user__email__icontains=request.REQUEST['search'])
+            for profile in crm.Contact.objects.filter(type='individual').filter(
+                Q(first_name__icontains=request.REQUEST['search']) | 
+                Q(last_name__icontains=request.REQUEST['search']) |
+                Q(email__icontains=request.REQUEST['search'])
             ).select_related():
                 results.append({
-                    'label': profile.user.get_full_name(),
+                    'label': profile.get_full_name(),
                     'href': reverse('view_person', kwargs={'person_id': profile.id}),
                     'element_class': 'contact',
                 })
                 results.sort(compare_by('label'))
+    print json.dumps(results[:10])
     return HttpResponse(json.dumps(results[:10]), mimetype="text/json")
 
 
@@ -134,7 +137,7 @@ def list_people(request):
     form = crm_forms.SearchForm(request.GET)
     if form.is_valid() and 'search' in request.GET:
         search = form.cleaned_data['search']
-        people = crm.Profile.objects.filter(
+        people = crm.Contact.objects.filter(type='individual').filter(
             Q(user__first_name__icontains=search) |
             Q(user__last_name__icontains=search)
         )
@@ -146,7 +149,7 @@ def list_people(request):
                 )
             )
     else:
-        people = crm.Profile.objects.all()
+        people = crm.Contact.objects.filter(type='individual')
     
     context = {
         'form': form,
@@ -162,11 +165,13 @@ def list_people(request):
 @render_with('crm/person/view.html')
 def view_person(request, person_id):
     try:
-        person = crm.Profile.objects.select_related().get(pk=person_id)
+        person = crm.Contact.objects.filter(
+            type='individual'
+        ).select_related().get(pk=person_id)
     except crm.Profile.DoesNotExist:
         raise Http404
     
-    interactions = person.user.interactions.order_by('-date').select_related(
+    interactions = person.interactions.order_by('-date').select_related(
         'contacts',
         'project',
         'project__business',
@@ -185,7 +190,7 @@ def view_person(request, person_id):
 @render_with('crm/person/create_edit.html')
 def create_edit_person(request, person_id=None):
     if person_id:
-        profile = get_object_or_404(crm.Profile, pk=person_id)
+        profile = get_object_or_404(crm.Contact, pk=person_id)
         user = profile.user
         try:
             location = profile.locations.get()
@@ -196,8 +201,10 @@ def create_edit_person(request, person_id=None):
         profile = None
         location = None
     new_location = not location
-    
-    user_form = crm_forms.PersonForm(request, instance=user)
+    if request.POST:
+        user_form = crm_forms.PersonForm(request.POST, instance=user)
+    else:
+        user_form = crm_forms.PersonForm(instance=user)
     if request.POST:
         profile_form = crm_forms.ProfileForm(request.POST, instance=profile)
         location, location_saved, location_context = create_edit_location(
@@ -317,14 +324,14 @@ def create_edit_interaction(request, person_id=None, interaction_id=None):
         interaction = None
     
     if person_id:
-        person = get_object_or_404(crm.Profile, pk=person_id)
+        person = get_object_or_404(crm.Contact, pk=person_id)
     else:
         person = None
     
     form = crm_forms.InteractionForm(
         request, 
         instance=interaction,
-        person=person, 
+        person=person,
         crm_user=request.user,
         url=reverse('quick_add_person'),
     )
@@ -376,7 +383,7 @@ def list_interactions(request):
     #            )
     #        )
     else:
-        interactions = request.user.interactions.all()
+        interactions = request.contact.interactions.all()
         
     interactions = interactions.select_related(
         'cdr',
@@ -398,7 +405,7 @@ def list_businesses(request):
     form = crm_forms.SearchForm(request.GET)
     if form.is_valid() and 'search' in request.GET:
         search = form.cleaned_data['search']
-        businesses = crm.Business.objects.filter(
+        businesses = crm.Contact.objects.filter(type='business').filter(
             Q(name__icontains=search) |
             Q(notes__icontains=search)
         )
@@ -410,7 +417,7 @@ def list_businesses(request):
                 )
             )
     else:
-        businesses = crm.Business.objects.all()
+        businesses = crm.Contact.objects.filter(type='business')
     
     context = {
         'form': form,
@@ -514,10 +521,17 @@ def create_edit_business(request, business=None):
 @transaction.commit_on_success
 @render_with('crm/business/relationship.html')
 def edit_business_relationship(request, business, user_id):
-    user = get_object_or_404(User, id=user_id, businesses=business)
-    rel = \
-      get_object_or_404(crm.BusinessRelationship, business=business, user=user)
-    relationship_form = crm_forms.BusinessRelationshipForm(
+    contact = get_object_or_404(
+        crm.Contact,
+        pk=user_id,
+        contacts=business,
+    )
+    rel = get_object_or_404(
+        crm.ContactRelationship,
+        from_contact=business,
+        to_contact=contact,
+    )
+    relationship_form = crm_forms.ContactRelationshipForm(
         request,
         instance=rel,
     )
@@ -526,7 +540,7 @@ def edit_business_relationship(request, business, user_id):
         return HttpResponseRedirect(request.REQUEST['next'])
     
     context = {
-        'user': user,
+        'user': contact,
         'business': business,
         'relationship_form': relationship_form,
     }
@@ -585,6 +599,7 @@ def view_project(request, business, project):
             business=business,
             transactions__project=project,
         ).distinct().select_related().order_by('type', '-date', '-id',)
+        print context['exchanges']
         context['show_delivered_column'] = \
             context['exchanges'].filter(type__deliverable=True).count() > 0
     except ImportError:
@@ -598,17 +613,16 @@ def view_project(request, business, project):
 def quick_add_person(request):
     results = []
     if request.POST:
-        for profile in crm.Profile.objects.filter(
-            Q(user__first_name__icontains=request.REQUEST['search']) | 
-            Q(user__last_name__icontains=request.REQUEST['search']) |
-            Q(user__email__icontains=request.REQUEST['search'])
+        for contact in crm.Contact.objects.filter(
+            Q(first_name__icontains=request.REQUEST['search']) | 
+            Q(last_name__icontains=request.REQUEST['search']) |
+            Q(email__icontains=request.REQUEST['search'])
         ).select_related():
             results.append({
-                'label': profile.user.get_full_name(),
+                'label': contact.get_full_name(),
                 'element_class': 'contact',
-                'element_id': unicode(profile.user.id),
+                'element_id': unicode(contact.id),
             })
-    
     return HttpResponse(json.dumps(results[:10]), mimetype="text/json")
 
 
@@ -629,33 +643,41 @@ def associate_contact(request, business, project=None, user_id=None, action=None
             
             if user_id:
                 try:
-                    user = User.objects.get(pk=user_id)
+                    contact = crm.Contact.objects.get(pk=user_id)
                     if project:
                         crm.ProjectRelationship.objects.get_or_create(
-                            user=user,
+                            contact=contact,
                             project=project,
                         )
                     else:
-                        crm.BusinessRelationship.objects.get_or_create(
-                            user=user,
-                            business=business,
+                        crm.ContactRelationship.objects.get_or_create(
+                            from_contact=contact,
+                            to_contact=business,
+                        )
+                        crm.ContactRelationship.objects.get_or_create(
+                            to_contact=contact,
+                            from_contact=business,
                         )
                 except User.DoesNotExist:
                     user = None
     else:
         try:
-            user = User.objects.get(pk=user_id)
+            contact = crm.Contact.objects.get(pk=user_id)
             if project:
                 crm.ProjectRelationship.objects.get(
-                    user=user,
+                    contact=contact,
                     project=project,
                 ).delete()
             else:
-                crm.BusinessRelationship.objects.get(
-                    user=user,
-                    business=business,
+                crm.ContactRelationship.objects.get(
+                    from_contact=contact,
+                    to_contact=business,
                 ).delete()
-        except User.DoesNotExist, crm.ProjectRelationship.DoesNotExist:
+                crm.ContactRelationship.objects.get(
+                    to_contact=contact,
+                    from_contact=business,
+                ).delete()
+        except crm.Contact.DoesNotExist, crm.ProjectRelationship.DoesNotExist:
             user = None
     
     return HttpResponseRedirect(request.REQUEST['next'])
@@ -665,8 +687,8 @@ def associate_contact(request, business, project=None, user_id=None, action=None
 @transaction.commit_on_success
 @render_with('crm/business/project/relationship.html')
 def edit_project_relationship(request, business, project, user_id):
-    user = get_object_or_404(User, id=user_id, projects=project)
-    rel = crm.ProjectRelationship.objects.get(project=project, user=user)
+    user = get_object_or_404(crm.Contact, pk=user_id, project_contacts=project)
+    rel = crm.ProjectRelationship.objects.get(project=project, contact=user)
     relationship_form = crm_forms.ProjectRelationshipForm(
         request,
         instance=rel,
