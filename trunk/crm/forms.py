@@ -42,7 +42,7 @@ class ProfileForm(forms.ModelForm):
     """
     
     class Meta:
-        model = crm.Profile
+        model = crm.Contact
         fields = ('notes', 'picture')
     
     @transaction.commit_on_success
@@ -107,7 +107,7 @@ class InteractionForm(RequestModelForm):
         
         self.fields['contacts'] = UserModelChoiceField(
             widget=caktus_widgets.AjaxSelectMultiWidget(url=self.url),
-            queryset=User.objects.all(),
+            queryset=crm.Contact.objects.filter(type='individual'),
         )
         if not self.request.POST:
             if self.instance.id:
@@ -123,7 +123,8 @@ class InteractionForm(RequestModelForm):
         elif self.instance.id:
             # show only client projects
             client_contacts = self.instance.contacts.filter(
-                businesses__business_types__name__iexact='client'
+                contacts__type='business',
+                contacts__business_types__name__iexact='client',
             )
             projects = crm.Project.objects.filter(
                 contacts__in=client_contacts
@@ -178,6 +179,29 @@ class BusinessRelationshipForm(RequestModelForm):
             choices=self.fields['types'].choices
         )
         self.fields['types'].help_text = ''
+
+
+class ContactRelationshipForm(RequestModelForm):
+    class Meta:
+        model = crm.ContactRelationship
+        fields = ('types',)
+
+    def __init__(self, *args, **kwargs):
+        super(ContactRelationshipForm, self).__init__(*args, **kwargs)
+        self.fields['types'].widget = forms.CheckboxSelectMultiple(
+            choices=self.fields['types'].choices
+        )
+        self.fields['types'].help_text = ''
+    
+    def save(self):
+        instance = super(ContactRelationshipForm, self).save(commit=True)
+        mirror, created = crm.ContactRelationship.objects.get_or_create(
+            from_contact=instance.to_contact,
+            to_contact=instance.from_contact,
+        )
+        mirror.types = instance.types.all()
+        mirror.save()
+        return instance
 
 
 class ProjectForm(forms.ModelForm):

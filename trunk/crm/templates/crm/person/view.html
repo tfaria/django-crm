@@ -38,19 +38,19 @@
 	</tr>
 </table>
 
-{% ifnotequal person.user.projects.count 0 %}
+{% ifnotequal person.project_contacts.count 0 %}
 	<h3>Projects</h3>
 	<ul class='projects person'>
-	{% for project in person.user.projects.all.select_related %}
+	{% for project in person.project_contacts.all.select_related %}
 		<li><a href='{% url view_project business_id=project.business.id,project_id=project.id %}'>{{ project.name }}</a> ({{ project.business.name }})</li>
 	{% endfor %}
 	</ul>
 {% endifnotequal %}
 
-{% ifnotequal person.user.businesses.count 0 %}
+{% ifnotequal person.business_relations.count 0 %}
 	<h3>Businesses</h3>
 	<ul class='businesses person'>
-	{% for business in person.user.businesses.all.select_related %}
+	{% for business in person.business_relations.select_related %}
 		<li><a href='{% url view_business business_id=business.id %}'>{{ business.name }}</a></li>
 	{% endfor %}
 	</ul>

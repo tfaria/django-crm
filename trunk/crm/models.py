@@ -20,18 +20,112 @@ from django.contrib.sites.models import Site
 from django.contrib.localflavor.us import models as us_models
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
+from django.utils.functional import curry
 
 from caktus.django.db.util import slugify_uniquely
 
 from contactinfo import models as contactinfo
 
 
-class Profile(models.Model):
-    user = models.ForeignKey(User, unique=True)
+class ContactRelationship(models.Model):
+    types = models.ManyToManyField(
+        'RelationshipType',
+        related_name='contact_relationships',
+        blank=True,
+    )
+    from_contact = models.ForeignKey('Contact', related_name='from_contacts')
+    to_contact = models.ForeignKey('Contact', related_name='to_contacts')
+
+    class Meta:
+        unique_together = ('from_contact', 'to_contact')
+
+    def __unicode__(self):
+        return "%s's relationship to %s" % (
+            self.contact_a,
+            self.contact_b,
+        )
+
+
+class ContactIndividual(models.Manager):
+    def get_query_set(self):
+        return super(ContactIndividual, self).get_query_set().filter(
+            type='individual',
+        )
+
+
+class ContactBusiness(models.Manager):
+    def get_query_set(self):
+        return super(ContactBusiness, self).get_query_set().filter(
+            type='business',
+        )
+
+
+CONTACT_TYPES = (
+    ('individual', 'Individual'),
+    ('business', 'Business'),
+)
+
+class Contact(models.Model):
+    user = models.ForeignKey(User, null=True, blank=True, unique=True)
+    business_types = models.ManyToManyField(
+        'BusinessType',
+        related_name='contacts',
+        blank=True,
+    )
+    
+    contacts = models.ManyToManyField(
+        'self',
+        through='ContactRelationship',
+        symmetrical=False,
+        related_name='related_contacts+',
+    )
+    locations = models.ManyToManyField(contactinfo.Location)
+    
+    type = models.CharField(max_length=32, choices=CONTACT_TYPES)
+    name = models.CharField(max_length=255, blank=True)
+    first_name = models.CharField(max_length=50, blank=True)
+    last_name = models.CharField(max_length=50, blank=True)
+    sort_name = models.CharField(max_length=255)
+    email = models.EmailField(blank=True)
+    description = models.TextField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
     picture = models.ImageField(null=True, blank=True, max_length=1048576, upload_to="picture/profile/")
     
-    locations = models.ManyToManyField(contactinfo.Location)
+    # used for migration
+    business_id = models.IntegerField(null=True, blank=True, unique=True)
+    
+    # individuals = ContactIndividual()
+    # businesses = ContactBusiness()
+    objects = models.Manager()
+    
+    def get_full_name(self):
+        return "%s %s" % (self.first_name, self.last_name)
+    
+    def add_accessor_methods(self, *args, **kwargs):
+        for contact_type, name in CONTACT_TYPES:
+            setattr(
+                self,
+                '%s_relations' % contact_type,
+                curry(self._get_TYPE_relations, contact_type=contact_type)
+            )
+    
+    def _get_TYPE_relations(self, contact_type):
+        return self.contacts.filter(type=contact_type)
+    
+    def __init__(self, *args, **kwargs):
+        super(Contact, self).__init__(*args, **kwargs)
+        self.add_accessor_methods()
+    
+    def _get_exchange_types(self):
+        # import here to avoid circular import
+        try:
+            from ledger.models import ExchangeType
+            return ExchangeType.objects.filter(
+                business_types__businesses=self
+            )
+        except ImportError:
+            return []
+    exchange_types = property(_get_exchange_types)
     
     def primary_phone(self):
         for type in ('office', 'mobile', 'home'):
@@ -41,6 +135,21 @@ class Profile(models.Model):
                         return phone
         
         return None
+    
+    def __unicode__(self):
+        if self.name:
+            name = self.name
+        else:
+            name = "%s %s" % (self.first_name, self.last_name)
+        return "%s (%s)" % (name, self.type)
+
+
+class Profile(models.Model):
+    user = models.ForeignKey(User, unique=True)
+    notes = models.TextField(null=True, blank=True)
+    picture = models.ImageField(null=True, blank=True, max_length=1048576, upload_to="picture/profile/")
+    
+    locations = models.ManyToManyField(contactinfo.Location)
     
     class Admin:
         ordering = ('user__last_name', 'user__first_name',)
@@ -130,17 +239,6 @@ class Business(models.Model):
     creditors = BusinessManager('creditor')
     members = BusinessManager('member')
     
-    def _get_exchange_types(self):
-        # import here to avoid circular import
-        try:
-            from ledger.models import ExchangeType
-            return ExchangeType.objects.filter(
-                business_types__businesses=self
-            )
-        except ImportError:
-            return []
-    exchange_types = property(_get_exchange_types)
-    
     def __unicode__(self):
         return self.name
     
@@ -186,11 +284,11 @@ class Project(models.Model):
     
     name = models.CharField(max_length = 255)
     trac_environment = models.CharField(max_length = 255, blank=True, null=True)
-    business = models.ForeignKey(Business, related_name='projects')
+    business = models.ForeignKey(Contact, related_name='projects')
     point_person = models.ForeignKey(User, limit_choices_to= {'is_staff':True})
     contacts = models.ManyToManyField(
-        User,
-        related_name='projects',
+        Contact,
+        related_name='project_contacts',
         through='ProjectRelationship',
     )
     
@@ -218,11 +316,11 @@ class ProjectRelationship(models.Model):
         related_name='project_relationships',
         blank=True,
     )
-    user = models.ForeignKey(User)
+    contact = models.ForeignKey(Contact)
     project = models.ForeignKey(Project)
     
     class Meta:
-        unique_together = ('user', 'project',)
+        unique_together = ('contact', 'project')
     
     def __unicode__(self):
         return "%s's relationship to %s" % (
@@ -246,10 +344,10 @@ class Interaction(models.Model):
     type = models.CharField(max_length=15, choices=INTERACTION_TYPES)
     completed = models.BooleanField(default=False)
     project = models.ForeignKey(Project, null=True, blank=True)
-    memo = models.TextField(null=True)
+    memo = models.TextField(blank=True)
     cdr_id = models.TextField(null=True)
     
-    contacts = models.ManyToManyField(User, related_name='interactions')
+    contacts = models.ManyToManyField(Contact, related_name='interactions')
     
     def src(self):
         if self.cdr:

@@ -13,6 +13,7 @@
 #    If not, see <http://www.opensource.org/licenses/bsd-license.php>.
 #
 
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from crm import models as crm
 
@@ -27,17 +28,25 @@ class StandardViewKwargsMiddleware(object):
         """
         request.business = None
         request.project = None
+        request.contact = None
         
     def process_view(self, request, view_func, view_args, view_kwargs):
+        if request.user.is_authenticated():
+            try:
+                request.contact = crm.Contact.objects.get(user=request.user)
+            except crm.Contact.DoesNotExist:
+                pass
+        
         if 'business_id' in view_kwargs:
             args = {
                 'pk': view_kwargs.pop('business_id'),
+                'type': 'business',
             }
             if args['pk']:
-                request.business = get_object_or_404(
-                    crm.Business, 
-                    **args
-                )
+                try:
+                    request.business = crm.Contact.objects.get(**args)
+                except crm.Contact.DoesNotExist:
+                    raise Http404
             view_kwargs['business'] = request.business
             
         if 'project_id' in view_kwargs:
