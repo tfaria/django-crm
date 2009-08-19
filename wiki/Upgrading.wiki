@@ -1,8 +1,8 @@
 #summary Upgrade instructions for production users
 
-= r11 =
+Revisions listed here will introduce a backwards incompatible change in the data model.  If you don't have any production data in django-crm (formerly minibooks) you can ignore these instructions and simply drop and recreate your database.
 
-Revisions after r11 will introduce a backwards incompatible change in the data model.  If you don't have any production data in django-crm (formerly minibooks) you can ignore these instructions and simply drop and recreate your database.
+= r11 =
 
 To successfully upgrade past r11, you need to complete the following steps:
 
@@ -13,3 +13,13 @@ To successfully upgrade past r11, you need to complete the following steps:
  # svn up
 
 r11 is a "special" state of the code in which both models for storing address/phone info exist.  They will be removed in a future revision, making your old data inaccessible if you don't go through this step.  Please create a ticket if you have any questions.
+
+= r18 =
+
+To successfully upgrade past r18, you must first complete the r11 upgrade (if need be) and then complete the following steps:
+
+ # svn up -r18
+ # ./manage.py syncdb
+ # ./manage.py migrate_crm_data
+ # ./manage.py dbshell < apps/external_apps/crm/migrations/004_business.sql
+ # svn up
