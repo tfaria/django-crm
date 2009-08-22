@@ -56,12 +56,21 @@ class ProfileForm(forms.ModelForm):
     @transaction.commit_on_success
     def save(self):
         instance = super(ProfileForm, self).save(commit=False)
+        qs = crm.Contact.objects.filter(type='individual')
         new_instance = not instance.id
         if instance.user:
             instance.user.first_name = instance.first_name
             instance.user.last_name = instance.last_name
             instance.user.email = instance.email
             instance.user.save()
+        if new_instance:
+            instance.type = 'individual'
+        else:
+            qs = qs.exclude(pk=instance.pk)
+        instance.slug = slugify_uniquely(
+            '%s %s' % (instance.last_name, instance.first_name),
+            qs,
+        )
         instance.save()
         self.save_m2m()
         return instance
