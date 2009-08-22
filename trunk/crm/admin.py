@@ -28,6 +28,7 @@ from django.contrib.auth.models import User, Group
 
 from crm import models as crm
 
+
 class BusinessTypeAdmin(admin.ModelAdmin):
     pass
 admin.site.register(crm.BusinessType, BusinessTypeAdmin)
@@ -36,3 +37,11 @@ admin.site.register(crm.BusinessType, BusinessTypeAdmin)
 class RelationshipType(admin.ModelAdmin):
     list_display = ('name', 'slug',)
 admin.site.register(crm.RelationshipType, RelationshipType)
+
+
+class ContactAdmin(admin.ModelAdmin):
+    raw_id_fields = ('user',)
+    list_display = ('id', 'type', 'name', 'first_name', 'last_name', 'email')
+    list_filter = ('type',)
+    order_by = ('sortname',)
+admin.site.register(crm.Contact, ContactAdmin)

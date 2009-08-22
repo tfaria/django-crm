@@ -138,8 +138,8 @@ def list_people(request):
     if form.is_valid() and 'search' in request.GET:
         search = form.cleaned_data['search']
         people = crm.Contact.objects.filter(type='individual').filter(
-            Q(user__first_name__icontains=search) |
-            Q(user__last_name__icontains=search)
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search)
         )
         if people.count() == 1:
             return HttpResponseRedirect(
@@ -191,26 +191,20 @@ def view_person(request, person_id):
 def create_edit_person(request, person_id=None):
     if person_id:
         profile = get_object_or_404(crm.Contact, pk=person_id)
-        user = profile.user
         try:
             location = profile.locations.get()
         except contactinfo.Location.DoesNotExist:
             location = None
     else:
-        user = None
         profile = None
         location = None
     new_location = not location
-    if request.POST:
-        user_form = crm_forms.PersonForm(request.POST, instance=user)
-    else:
-        user_form = crm_forms.PersonForm(instance=user)
     if request.POST:
         profile_form = crm_forms.ProfileForm(request.POST, instance=profile)
         location, location_saved, location_context = create_edit_location(
             request, 
             location,
-            profile_form.is_valid() and user_form.is_valid(),
+            profile_form.is_valid(),
         )
         
         if location_saved:
@@ -220,12 +214,11 @@ def create_edit_person(request, person_id=None):
 #                'subject': 'Welcome!',
 #                'extra_context': { 'somekey': 'someval' },
             }
-            saved_user, user_created = user_form.save(email)
-            saved_profile = profile_form.save(user=saved_user)
+            saved_profile = profile_form.save()
             
             if new_location:
                 saved_profile.locations.add(location)
-            if user:
+            if saved_profile:
                 message = 'Person updated successfully'
             else:
                 message = 'New person created successfully'
@@ -253,8 +246,7 @@ def create_edit_person(request, person_id=None):
             False,
         )
     context = {
-        'forms': [user_form, profile_form],
-        'user': user,
+        'forms': [profile_form],
     }
     context.update(location_context)
     return context

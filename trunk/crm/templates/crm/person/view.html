@@ -6,7 +6,7 @@
 {% block content %}
 <h2>{{ person }}</h2>
 <ul class='header-actions-left'>
-{% if perms.auth.change_user %}
+{% if perms.auth.change_contact %}
 	<li><a href='{% url edit_person person_id=person.id %}?next={% url view_person person_id=person.id %}'>Edit Person</a></li>
 {% endif %}
 </ul>
@@ -14,7 +14,7 @@
 <table class='vertical' id='person-profile'>
 	<tr>
 		<th>Email:</th>
-		<td><a href='mailto:{{ person.user.email }}'>{{ person.user.email }}</a></td>
+		<td><a href='mailto:{{ person.email }}'>{{ person.email }}</a></td>
 	</tr>
 {% for location in person.locations.all %}
 
