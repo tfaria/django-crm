@@ -25,6 +25,7 @@ from caktus.django.forms import SimpleUserForm, RequestForm, RequestModelForm
 from caktus.django.widgets import CheckboxSelectMultipleWithJS
 from caktus.decorators import requires_kwarg
 from caktus.django import widgets as caktus_widgets
+from caktus.django.db.util import slugify_uniquely
 
 import crm.models as crm
 
@@ -35,6 +36,63 @@ class PersonForm(SimpleUserForm):
           User.objects.filter(email=self.cleaned_data['email']).count() > 0:
             raise forms.ValidationError('A user with that e-mail address already exists.')
         return self.cleaned_data['email']
+
+
+class ProfileForm(forms.ModelForm):
+    """
+    Model form for user profiles.
+    """
+
+    class Meta:
+        model = crm.Contact
+        fields = ('first_name', 'last_name', 'email', 'notes', 'picture')
+    
+    def clean_email(self):
+        if not self.instance.id and \
+          crm.Contact.objects.filter(email=self.cleaned_data['email']).count() > 0:
+            raise forms.ValidationError('A user with that e-mail address already exists.')
+        return self.cleaned_data['email']
+    
+    @transaction.commit_on_success
+    def save(self):
+        instance = super(ProfileForm, self).save(commit=False)
+        new_instance = not instance.id
+        if instance.user:
+            instance.user.first_name = instance.first_name
+            instance.user.last_name = instance.last_name
+            instance.user.email = instance.email
+            instance.user.save()
+        instance.save()
+        self.save_m2m()
+        return instance
+
+
+class BusinessForm(forms.ModelForm):
+    class Meta:
+        model = crm.Contact
+        fields = ('name', 'description', 'notes', 'business_types')
+
+    def __init__(self, *args, **kwargs):
+        super(BusinessForm, self).__init__(*args, **kwargs)
+
+        self.fields['business_types'].label = 'Type(s)'
+        self.fields['business_types'].widget = \
+          caktus_widgets.CheckboxSelectMultipleWithJS(
+            choices = self.fields['business_types'].choices
+        )
+        self.fields['business_types'].help_text = ''
+
+    def save(self, commit=True):
+        instance = super(BusinessForm, self).save(commit=False)
+        qs = crm.Contact.objects.filter(type='business')
+        if not instance.pk:
+            instance.type = 'business'
+        else:
+            qs = qs.exclude(pk=instance.pk)
+        instance.slug = slugify_uniquely(instance.name, qs)
+        if commit:
+            instance.save()
+        return instance
 
 
 class EmailForm(forms.Form):
@@ -133,22 +191,6 @@ class InteractionForm(RequestModelForm):
 
 class SearchForm(forms.Form):
     search = forms.CharField(required=False)
-
-
-class BusinessForm(forms.ModelForm):
-    class Meta:
-        model = crm.Contact
-        fields = ('name', 'description', 'notes', 'business_types')
-    
-    def __init__(self, *args, **kwargs):
-        super(BusinessForm, self).__init__(*args, **kwargs)
-        
-        self.fields['business_types'].label = 'Type(s)'
-        self.fields['business_types'].widget = \
-          caktus_widgets.CheckboxSelectMultipleWithJS(
-            choices = self.fields['business_types'].choices
-        )
-        self.fields['business_types'].help_text = '' 
 
 
 class ContactRelationshipForm(RequestModelForm):

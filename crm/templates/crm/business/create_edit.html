@@ -7,6 +7,14 @@
 {{ location_form.media }}
 {% endblock %}
 
+{% block mootools %}
+    <script src="{{ MEDIA_URL }}js/mootools-1.2.1-core-yc.js" type="text/javascript"></script>
+    <link href="/clients/media/style/caktus/Autocompleter/Autocompleter.css" type="text/css" media="all" rel="stylesheet" />
+    <script type="text/javascript" src="{{ MEDIA_URL }}js/caktus/Autocompleter/Autocompleter.js"></script>
+    <script type="text/javascript" src="{{ MEDIA_URL }}js/caktus/Autocompleter/Autocompleter.Request.js"></script>
+    <script type="text/javascript" src="{{ MEDIA_URL }}js/caktus/Autocompleter/Observer.js"></script>
+{% endblock %}
+
 {% block css %}
 <link charset='UTF-8' rel='stylesheet' type='text/css' media='screen' href='{{ MEDIA_URL }}css/django-contactinfo.css' />
 {% endblock %}
