@@ -22,4 +22,10 @@ To successfully upgrade past r18, you must first complete the r11 upgrade (if ne
  # ./manage.py syncdb
  # ./manage.py migrate_crm_data
  # ./manage.py dbshell < apps/external_apps/crm/migrations/004_business.sql
- # svn up
+
+= r21 =
+
+ # svn up -r21
+ # ./manage.py dbshell < apps/external_apps/crm/migrations/005_slug.sql
+ # ./manage.py migrate_crm_data
+ # ./manage.py dbshell < apps/external_apps/crm/migrations/006_slug_not_null.sql
