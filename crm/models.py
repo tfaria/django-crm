@@ -53,6 +53,7 @@ class Contact(models.Model):
     first_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50, blank=True)
     sort_name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, unique=True)
     email = models.EmailField(blank=True)
     description = models.TextField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
