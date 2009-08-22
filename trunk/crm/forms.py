@@ -28,31 +28,13 @@ from caktus.django import widgets as caktus_widgets
 
 import crm.models as crm
 
+
 class PersonForm(SimpleUserForm):
     def clean_email(self):
         if not self.instance.id and \
           User.objects.filter(email=self.cleaned_data['email']).count() > 0:
             raise forms.ValidationError('A user with that e-mail address already exists.')
         return self.cleaned_data['email']
-
-
-class ProfileForm(forms.ModelForm):
-    """
-    Model form for user profiles.
-    """
-    
-    class Meta:
-        model = crm.Contact
-        fields = ('notes', 'picture')
-    
-    @transaction.commit_on_success
-    def save(self, user):
-        instance = super(ProfileForm, self).save(commit=False)
-        new_instance = not instance.id
-        instance.user = user
-        instance.save()
-        self.save_m2m()
-        return instance
 
 
 class EmailForm(forms.Form):
@@ -91,6 +73,7 @@ class EmailForm(forms.Form):
 class UserModelChoiceField(forms.ModelMultipleChoiceField):
     def label_from_instance(self, obj):
         return obj.get_full_name()
+
 
 class InteractionForm(RequestModelForm):
     class Meta:
@@ -154,7 +137,7 @@ class SearchForm(forms.Form):
 
 class BusinessForm(forms.ModelForm):
     class Meta:
-        model = crm.Business
+        model = crm.Contact
         fields = ('name', 'description', 'notes', 'business_types')
     
     def __init__(self, *args, **kwargs):
@@ -166,19 +149,6 @@ class BusinessForm(forms.ModelForm):
             choices = self.fields['business_types'].choices
         )
         self.fields['business_types'].help_text = '' 
-
-
-class BusinessRelationshipForm(RequestModelForm):
-    class Meta:
-        model = crm.BusinessRelationship
-        fields = ('types',)
-    
-    def __init__(self, *args, **kwargs):
-        super(BusinessRelationshipForm, self).__init__(*args, **kwargs)
-        self.fields['types'].widget = forms.CheckboxSelectMultiple(
-            choices=self.fields['types'].choices
-        )
-        self.fields['types'].help_text = ''
 
 
 class ContactRelationshipForm(RequestModelForm):

@@ -27,39 +27,6 @@ from caktus.django.db.util import slugify_uniquely
 from contactinfo import models as contactinfo
 
 
-class ContactRelationship(models.Model):
-    types = models.ManyToManyField(
-        'RelationshipType',
-        related_name='contact_relationships',
-        blank=True,
-    )
-    from_contact = models.ForeignKey('Contact', related_name='from_contacts')
-    to_contact = models.ForeignKey('Contact', related_name='to_contacts')
-
-    class Meta:
-        unique_together = ('from_contact', 'to_contact')
-
-    def __unicode__(self):
-        return "%s's relationship to %s" % (
-            self.contact_a,
-            self.contact_b,
-        )
-
-
-class ContactIndividual(models.Manager):
-    def get_query_set(self):
-        return super(ContactIndividual, self).get_query_set().filter(
-            type='individual',
-        )
-
-
-class ContactBusiness(models.Manager):
-    def get_query_set(self):
-        return super(ContactBusiness, self).get_query_set().filter(
-            type='business',
-        )
-
-
 CONTACT_TYPES = (
     ('individual', 'Individual'),
     ('business', 'Business'),
@@ -69,7 +36,7 @@ class Contact(models.Model):
     user = models.ForeignKey(User, null=True, blank=True, unique=True)
     business_types = models.ManyToManyField(
         'BusinessType',
-        related_name='contacts',
+        related_name='businesses',
         blank=True,
     )
     
@@ -94,8 +61,6 @@ class Contact(models.Model):
     # used for migration
     business_id = models.IntegerField(null=True, blank=True, unique=True)
     
-    # individuals = ContactIndividual()
-    # businesses = ContactBusiness()
     objects = models.Manager()
     
     def get_full_name(self):
@@ -144,25 +109,23 @@ class Contact(models.Model):
         return "%s (%s)" % (name, self.type)
 
 
-class Profile(models.Model):
-    user = models.ForeignKey(User, unique=True)
-    notes = models.TextField(null=True, blank=True)
-    picture = models.ImageField(null=True, blank=True, max_length=1048576, upload_to="picture/profile/")
-    
-    locations = models.ManyToManyField(contactinfo.Location)
-    
-    class Admin:
-        ordering = ('user__last_name', 'user__first_name',)
-        list_display = ['user', 'notes']
-    
+class ContactRelationship(models.Model):
+    types = models.ManyToManyField(
+        'RelationshipType',
+        related_name='contact_relationships',
+        blank=True,
+    )
+    from_contact = models.ForeignKey('Contact', related_name='from_contacts')
+    to_contact = models.ForeignKey('Contact', related_name='to_contacts')
+
     class Meta:
-        permissions = (
-            ('view_profile', 'Can view profile'),
-            ('access_xmlrpc', 'Can access XML-RPC service')
-        )
-    
+        unique_together = ('from_contact', 'to_contact')
+
     def __unicode__(self):
-        return self.user.get_full_name()
+        return "%s's relationship to %s" % (
+            self.contact_a,
+            self.contact_b,
+        )
 
 
 class BusinessType(models.Model):
@@ -174,17 +137,6 @@ class BusinessType(models.Model):
     
     def __unicode__(self):
         return self.name
-
-
-class BusinessManager(models.Manager):
-    def __init__(self, business_type):
-        super(BusinessManager, self).__init__()
-        self.business_type = business_type
-        
-    def get_query_set(self):
-        return super(BusinessManager, self).get_query_set().filter(
-            business_types__name__iexact=self.business_type
-        )
 
 
 class RelationshipType(models.Model):
@@ -200,74 +152,6 @@ class RelationshipType(models.Model):
     
     def __unicode__(self):
         return self.name
-
-
-class Business(models.Model):
-    name = models.CharField(max_length=255)
-    logo = models.ImageField(
-        null=True,
-        blank=True,
-        max_length=1048576,
-        upload_to='picture/logo/',
-    )
-    
-    description = models.TextField(null=True, blank=True)
-    notes = models.TextField(null=True, blank=True)
-    
-    business_types = models.ManyToManyField(
-        BusinessType,
-        blank=True,
-        related_name='businesses',
-    )
-    locations = models.ManyToManyField(
-        contactinfo.Location, 
-        related_name='businesses',
-    )
-    related_people = models.ManyToManyField(
-        User,
-        blank=True,
-        related_name='businesses',
-        through='BusinessRelationship',
-    )
-    related_businesses = models.ManyToManyField(
-        'self',
-        blank=True,
-    )
-    objects = models.Manager()
-    clients = BusinessManager('client')
-    vendors = BusinessManager('vendor')
-    creditors = BusinessManager('creditor')
-    members = BusinessManager('member')
-    
-    def __unicode__(self):
-        return self.name
-    
-    class Meta:
-        verbose_name_plural = _('businesses')
-        verbose_name = _('business')
-        ordering = ('name',)
-        permissions = (
-            ('view_business', 'Can view business'),
-        )
-
-
-class BusinessRelationship(models.Model):
-    types = models.ManyToManyField(
-        RelationshipType,
-        related_name='business_relationships',
-        blank=True,
-    )
-    user = models.ForeignKey(User)
-    business = models.ForeignKey(Business)
-    
-    class Meta:
-        unique_together = ('user', 'business',)
-    
-    def __unicode__(self):
-        return "%s's relationship to %s" % (
-            self.business.name,
-            self.user.get_full_name(),
-        )
 
 
 class Project(models.Model):
@@ -371,9 +255,10 @@ class Interaction(models.Model):
             ('view_interaction', 'Can view interaction'),
             ('view_todo_list', 'Can view to do list'),
         )
-
+    
     def __unicode__(self):
         return "%s: %s" % ( self.date.strftime("%m/%d/%y"), self.type )
+
 
 def install():
     group, created = Group.objects.get_or_create(name='CRM Admin')
