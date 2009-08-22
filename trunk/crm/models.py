@@ -107,7 +107,7 @@ class Contact(models.Model):
             name = self.name
         else:
             name = "%s %s" % (self.first_name, self.last_name)
-        return "%s (%s)" % (name, self.type)
+        return name
 
 
 class ContactRelationship(models.Model):
