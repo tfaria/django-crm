@@ -247,6 +247,7 @@ def create_edit_person(request, person_id=None):
         )
     context = {
         'forms': [profile_form],
+        'profile': profile,
     }
     context.update(location_context)
     return context
