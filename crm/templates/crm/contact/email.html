@@ -1,0 +1,22 @@
+{% extends "crm/person/view.html" %}
+
+{% block breadcrumb %}
+    {{ block.super }}
+    {% load breadcrumb_tags %}
+    {% add_crumb 'Send Email' 'email_contact' contact.slug %}
+{% endblock %}
+
+{% block title %}Send Email to {{ contact }}{% endblock %}
+
+{% block content %}
+    <h1>Send Email to {{ contact }}</h1>
+    <form action='' method='post'>
+        <table id='contact-form' class='vertical top'>
+            {{ form }}
+            <tr>
+                <td>&nbsp;</td>
+                <td class='submit'><input type='submit' name='submit' class='button' value='Send!' /></td>
+            </tr>
+        </table>
+    </form>
+{% endblock %}

@@ -42,6 +42,12 @@ urlpatterns = patterns('',
     url(r'^person/(?P<person_id>\d+)/$', views.view_person, name='view_person'),
     url(r'^person/(?P<person_id>\d+)/edit/$', views.create_edit_person, name='edit_person'),
     
+    url(
+        r'^contact/(?P<contact_slug>[-\w]+)/email/$',
+        views.email_contact,
+        name='email_contact',
+    ),
+    
     # businesses
     url(r'^business/list/$', views.list_businesses, name='list_businesses'),
     url(
