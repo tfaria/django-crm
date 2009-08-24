@@ -20,30 +20,33 @@
 </ul>
 
 <table class='vertical' id='person-profile'>
-	<tr>
-		<th>Email:</th>
-		<td><a href='mailto:{{ contact.email }}'>{{ contact.email }}</a></td>
-	</tr>
+{% if contact.email %}
+    <tr>
+        <th>Email:</th>
+        <td><a href='mailto:{{ contact.email }}'>{{ contact.email }}</a></td>
+    </tr>
+{% endif %}
 {% for location in contact.locations.all %}
+    {% for address in location.addresses.all %}
+        <tr>
+            <th>{{ location.type|capfirst }} Address:</th>
+            <td>{{ address }}</td>
+        </tr>
+    {% endfor %}
 
-{% for address in location.addresses.all %}
-	<tr>
-		<th>{{ location.type|capfirst }} Address:</th>
-		<td>{{ address }}</td>
-	</tr>
+    {% for phone in location.phones.all %}
+        <tr>
+            <th>{{ location.type|capfirst }} {{ phone.type|capfirst }}:</th>
+            <td><a href='sip://1-{{ phone }}'>{{ phone }}</a></td>
+        </tr>
+    {% endfor %}
 {% endfor %}
-
-{% for phone in location.phones.all %}
-	<tr>
-		<th>{{ location.type|capfirst }} {{ phone.type|capfirst }}:</th>
-		<td><a href='sip://1-{{ phone }}'>{{ phone }}</a></td>
-	</tr>
-{% endfor %}
-{% endfor %}
-	<tr>
-		<th>Notes:</th>
-		<td>{{ contact.notes|textile }}</td>
-	</tr>
+{% if contact.notes %}
+    <tr>
+        <th>Notes:</th>
+        <td>{{ contact.notes|textile }}</td>
+    </tr>
+{% endif %}
 </table>
 
 {% ifnotequal contact.project_contacts.count 0 %}
