@@ -325,7 +325,7 @@ def create_edit_interaction(request, person_id=None, interaction_id=None):
         request, 
         instance=interaction,
         person=person,
-        crm_user=request.user,
+        crm_user=request.contact,
         url=reverse('quick_add_person'),
     )
     

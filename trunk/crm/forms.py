@@ -164,12 +164,14 @@ class InteractionForm(RequestModelForm):
                 initial_choices = \
                     self.instance.contacts.values_list('id', flat=True)
             else:
-                initial_choices = [self.person.user.id, self.crm_user.id]
+                initial_choices = [self.person.id]
+                if self.crm_user:
+                    initial_choices.append(self.crm_user.id)
             self.fields['contacts'].widget.initial_choices = \
                 [unicode(choice) for choice in initial_choices]
         
         if not self.instance.id and self.person:
-            projects = crm.Project.objects.filter(contacts__profile=self.person)
+            projects = crm.Project.objects.filter(contacts=self.person)
         elif self.instance.id:
             # show only client projects
             client_contacts = self.instance.contacts.filter(
@@ -192,7 +194,7 @@ class InteractionForm(RequestModelForm):
         instance = super(InteractionForm, self).save()
         if created:
             if self.person:
-                instance.contacts.add(self.person.user)
+                instance.contacts.add(self.person)
             if self.crm_user:
                 instance.contacts.add(self.crm_user)
         return instance
