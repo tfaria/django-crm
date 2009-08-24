@@ -21,8 +21,9 @@ from xml.parsers.expat import ExpatError
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
-from django.test import Client, TestCase
+from django.test import Client, TestCase, TransactionTestCase
 from django.contrib.contenttypes.models import ContentType
+from django.core import mail
 
 from crm import models as crm
 
@@ -73,3 +74,39 @@ class XMLRPCTestCase(TestCase):
             self.rpc_client.authenticate(username, password),
             'user %s failed to authenticate with %s' % (username, password,)
         )
+
+
+class ContactTestCase(TestCase):
+    def setUp(self):
+        self.contact = crm.Contact.objects.create(
+            first_name='John',
+            last_name='Doe',
+            email='john@doe.com',
+            slug='john-doe',
+            description='',
+            sort_name='doe-john',
+        )
+    
+    def testEmailForm(self):
+        url = reverse('email_contact', args=[self.contact.slug])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        data = {
+            'name': 'Jane Doe',
+            'email': 'jane@doe.com',
+            'message': 'This is a test of the emergency broadcast system.',
+        }
+        response = self.client.post(
+            url,
+            data,
+            follow=True,
+        )
+        self.assertEqual(len(mail.outbox), 2)
+        message = mail.outbox[0]
+        receipt = mail.outbox[1]
+        self.assertEqual(message.subject, 'IAS Individual Contact Form')
+        self.assertTrue(
+            "You've received a message from Jane Doe" in message.body
+        )
+        self.assertTrue(self.contact.email in message.to)
+        self.assertTrue(data['email'] in receipt.to)
