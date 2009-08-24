@@ -40,6 +40,7 @@ admin.site.register(crm.RelationshipType, RelationshipType)
 
 
 class ContactAdmin(admin.ModelAdmin):
+    search_fields = ('first_name', 'last_name', 'name', 'email')
     raw_id_fields = ('user',)
     list_display = ('id', 'type', 'name', 'first_name', 'last_name', 'email')
     list_filter = ('type',)
