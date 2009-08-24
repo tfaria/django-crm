@@ -301,9 +301,7 @@ class EmailContactForm(RequestForm):
         name = self.cleaned_data['name']
         email = self.cleaned_data['email']
         message = self.cleaned_data['message']
-        
-        subject = 'IAS Contact Form'
-
+        subject = 'IAS Individual Contact Form'
         messages = []
         messages.append((
             subject,
@@ -321,6 +319,6 @@ class EmailContactForm(RequestForm):
                 self.cleaned_data,
             ),
             settings.DEFAULT_FROM_EMAIL,
-            self.recipients,
+            [email],
         ))
         send_mass_mail(messages, fail_silently=True)
