@@ -173,7 +173,7 @@ def view_person(request, person_id):
         person = crm.Contact.objects.filter(
             type='individual'
         ).select_related().get(pk=person_id)
-    except crm.Profile.DoesNotExist:
+    except crm.Contact.DoesNotExist:
         raise Http404
     
     interactions = person.interactions.order_by('-date').select_related(
@@ -187,6 +187,23 @@ def view_person(request, person_id):
         'interactions': interactions,
     }
     return context
+
+
+@render_with('crm/contact/email.html')
+def email_contact(request, contact_slug):
+    try:
+        contact = crm.Contact.objects.select_related().get(slug=contact_slug)
+    except crm.Contact.DoesNotExist:
+        raise Http404
+    form = crm_forms.EmailContactForm(request, recipients=[contact.email])
+    if request.POST and form.is_valid():
+        form.save()
+        request.session.create_message('Message sent successfully to %s.' % contact)
+        return HttpResponseRedirect(reverse('view_person', args=[contact.id]))
+    return {
+        'form': form,
+        'contact': contact,
+    }
 
 
 @permission_required('crm.add_profile')

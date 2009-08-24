@@ -21,6 +21,9 @@ from django.contrib.localflavor.us import forms as us_forms
 from django.db import transaction
 from django.db.models import Q
 from django.template.defaultfilters import slugify
+from django.conf import settings
+from django.core.mail import send_mail, send_mass_mail
+from django.template.loader import render_to_string
 
 from caktus.django.forms import SimpleUserForm, RequestForm, RequestModelForm
 from caktus.django.widgets import CheckboxSelectMultipleWithJS
@@ -70,6 +73,7 @@ class ProfileForm(forms.ModelForm):
             instance.user.email = instance.email
             instance.user.save()
         if new_instance:
+            instance.description = ''
             instance.type = 'individual'
         else:
             qs = qs.exclude(pk=instance.pk)
@@ -282,3 +286,41 @@ class ProjectRelationshipForm(RequestModelForm):
             choices=self.fields['types'].choices
         )
         self.fields['types'].help_text = ''
+
+
+class EmailContactForm(RequestForm):
+    name = forms.CharField()
+    email = forms.EmailField()
+    message = forms.CharField(widget=forms.Textarea)
+    
+    def __init__(self, *args, **kwargs):
+        self.recipients = kwargs.pop('recipients') 
+        super(EmailContactForm, self).__init__(*args, **kwargs)
+    
+    def save(self):
+        name = self.cleaned_data['name']
+        email = self.cleaned_data['email']
+        message = self.cleaned_data['message']
+        
+        subject = 'IAS Contact Form'
+
+        messages = []
+        messages.append((
+            subject,
+            render_to_string(
+                'crm/contact/contact_form.txt',
+                self.cleaned_data,
+            ),
+            settings.DEFAULT_FROM_EMAIL,
+            self.recipients,
+        ))
+        messages.append((
+            subject,
+            render_to_string(
+                'crm/contact/contact_form_confirmation.txt',
+                self.cleaned_data,
+            ),
+            settings.DEFAULT_FROM_EMAIL,
+            self.recipients,
+        ))
+        send_mass_mail(messages, fail_silently=True)

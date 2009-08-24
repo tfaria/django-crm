@@ -23,7 +23,7 @@
 {% if contact.email %}
     <tr>
         <th>Email:</th>
-        <td><a href='mailto:{{ contact.email }}'>{{ contact.email }}</a></td>
+        <td><a href='mailto:{{ contact.email }}'>{{ contact.email }}</a> (<a href='{% url email_contact contact.slug %}'>Send Email)</a></td>
     </tr>
 {% endif %}
 {% for location in contact.locations.all %}
