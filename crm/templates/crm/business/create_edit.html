@@ -1,7 +1,17 @@
-{% extends "base.html" %}
+{% extends "crm/business/view.html" %}
 {% load i18n %}
 
 {% block title %}{% if not business %}Create {% trans "Business" %}{% else %}Edit {{ business }}{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+    {{ block.super }}
+    {% load breadcrumb_tags %}
+    {% if business %}
+        {% add_crumb 'Edit' %}
+    {% else %}
+        {% add_crumb 'Create' %}
+    {% endif %}
+{% endblock %}
 
 {% block javascript %}
 {{ location_form.media }}

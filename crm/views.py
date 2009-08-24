@@ -41,25 +41,30 @@ from crm import forms as crm_forms
 @login_required
 @render_with('crm/dashboard.html')
 def dashboard(request):
-    # soonest first
-    upcoming_interactions = request.contact.interactions.select_related(
-        'cdr',
-        'contacts',
-        'project',
-        'project__business',
-    ).filter(completed=False).order_by('date')
-    
-    # most recent first
-    recent_interactions = request.contact.interactions.select_related(
-        'cdr',
-        'contacts',
-        'project',
-        'project__business',
-    ).filter(completed=True)[:6]
-    
-    projects = request.contact.project_contacts.order_by(
-        'name',
-    ).select_related('business')
+    if request.contact:
+        # soonest first
+        upcoming_interactions = request.contact.interactions.select_related(
+            'cdr',
+            'contacts',
+            'project',
+            'project__business',
+        ).filter(completed=False).order_by('date')
+
+        # most recent first
+        recent_interactions = request.contact.interactions.select_related(
+            'cdr',
+            'contacts',
+            'project',
+            'project__business',
+        ).filter(completed=True)[:6]
+
+        projects = request.contact.project_contacts.order_by(
+            'name',
+        ).select_related('business')
+    else:
+        upcoming_interactions = []
+        recent_interactions = []
+        projects = []
     
     context = {
         'recent_interactions': recent_interactions,
@@ -155,7 +160,7 @@ def list_people(request):
         'form': form,
         # it'd be nice if we could grab 'phones' too, but that isn't supported:
         # http://code.djangoproject.com/ticket/6432
-        'people': people.select_related('user').order_by('user__last_name'),
+        'people': people.select_related('user').order_by('sort_name'),
         'phone_types': contactinfo.Phone.PHONE_TYPES,
     }
     return context
@@ -178,7 +183,7 @@ def view_person(request, person_id):
     )[0:10]
     
     context = {
-        'person': person,
+        'contact': person,
         'interactions': interactions,
     }
     return context
@@ -247,7 +252,7 @@ def create_edit_person(request, person_id=None):
         )
     context = {
         'forms': [profile_form],
-        'profile': profile,
+        'contact': profile,
     }
     context.update(location_context)
     return context
