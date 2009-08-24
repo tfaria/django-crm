@@ -20,6 +20,7 @@ from django.contrib.auth.models import User
 from django.contrib.localflavor.us import forms as us_forms
 from django.db import transaction
 from django.db.models import Q
+from django.template.defaultfilters import slugify
 
 from caktus.django.forms import SimpleUserForm, RequestForm, RequestModelForm
 from caktus.django.widgets import CheckboxSelectMultipleWithJS
@@ -48,9 +49,14 @@ class ProfileForm(forms.ModelForm):
         fields = ('first_name', 'last_name', 'email', 'notes', 'picture')
     
     def clean_email(self):
-        if not self.instance.id and \
-          crm.Contact.objects.filter(email=self.cleaned_data['email']).count() > 0:
-            raise forms.ValidationError('A user with that e-mail address already exists.')
+        if self.cleaned_data['email'] != '':
+            emails = crm.Contact.objects.filter(
+                email=self.cleaned_data['email']
+            )
+            if self.instance.pk:
+                emails = emails.exclude(pk=self.instance.pk)
+            if emails.count() > 0:
+                raise forms.ValidationError('A user with that e-mail address already exists.')
         return self.cleaned_data['email']
     
     @transaction.commit_on_success
@@ -70,6 +76,9 @@ class ProfileForm(forms.ModelForm):
         instance.slug = slugify_uniquely(
             '%s %s' % (instance.last_name, instance.first_name),
             qs,
+        )
+        instance.sort_name = slugify(
+            '%s %s' % (instance.last_name, instance.first_name),
         )
         instance.save()
         self.save_m2m()
@@ -99,6 +108,7 @@ class BusinessForm(forms.ModelForm):
         else:
             qs = qs.exclude(pk=instance.pk)
         instance.slug = slugify_uniquely(instance.name, qs)
+        instance.sort_name = slugify(instance.name)
         if commit:
             instance.save()
         return instance
