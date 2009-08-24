@@ -1,8 +1,16 @@
-{% extends "base.html" %}
+{% extends "crm/business/list.html" %}
 {% load i18n %}
 {% load markup %}
 
 {% block title %}{{ business }}{% endblock %}
+
+{% block breadcrumb %}
+    {{ block.super }}
+    {% load breadcrumb_tags %}
+    {% if business %}
+        {% add_crumb business 'view_business' business.pk %}
+    {% endif %}
+{% endblock %}
 
 {% block javascript %}
 	<script src="{{ MEDIA_URL }}js/mootools-1.2-more.js" type="text/javascript"></script>

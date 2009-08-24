@@ -2,6 +2,12 @@
 {% load i18n %}
 {% block title %}Businesses{% endblock %}
 
+{% block breadcrumb %}
+    {{ block.super }}
+    {% load breadcrumb_tags %}
+    {% add_crumb 'Businesses' 'list_businesses' %}
+{% endblock %}
+
 {% block content %}
 <h2>{% trans "Businesses" %}</h2>
 <ul class='header-actions-left'>

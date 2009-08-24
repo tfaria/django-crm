@@ -1,6 +1,16 @@
-{% extends "base.html" %}
+{% extends "crm/person/view.html" %}
 
-{% block title %}{% if user %}Update {{ user.get_full_name }}{% else %}Add new person{% endif %}{% endblock %}
+{% block title %}{% if contact %}Update {{ contact }}{% else %}Add new person{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+    {{ block.super }}
+    {% load breadcrumb_tags %}
+    {% if contact %}
+        {% add_crumb 'Edit' %}
+    {% else %}
+        {% add_crumb 'Create' %}
+    {% endif %}
+{% endblock %}
 
 {% block javascript %}
 {{ location_form.media }}
@@ -12,7 +22,7 @@
 
 {% block content %}
 
-<h2>{% if profile %}Update {{ user.get_full_name }}{% else %}Add new person{% endif %}</h2>
+<h2>{% if contact %}Update {{ contact }}{% else %}Add new person{% endif %}</h2>
 
 <form id='create-edit-person' accept-charset='UTF-8' method='post' action=''>
 	<table class='vertical'>
@@ -25,7 +35,7 @@
 			<td class='submit'>
 				<input type='button' value='Cancel' onclick='history.go(-1)' />
 				&nbsp;
-				<input type='submit' name='submit' value='{% if profile %}Update{% else %}Create{% endif %} &rarr;' />
+				<input type='submit' name='submit' value='{% if contact %}Update{% else %}Create{% endif %} &rarr;' />
 			</td>
 		</tr>
 	</table>

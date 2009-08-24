@@ -2,6 +2,12 @@
 
 {% block title %}People{% endblock %}
 
+{% block breadcrumb %}
+    {{ block.super }}
+    {% load breadcrumb_tags %}
+    {% add_crumb 'People' 'list_people' %}
+{% endblock %}
+
 {% block content %}
 <h2>People</h2>
 {% if perms.crm %}

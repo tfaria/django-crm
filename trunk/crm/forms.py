@@ -248,7 +248,10 @@ class ProjectForm(forms.ModelForm):
         if self.business:
             self.fields.pop('business')
         else:
-            self.fields['business'].queryset = crm.Business.clients.all()
+            self.fields['business'].queryset = crm.Contact.objects.filter(
+                type='business',
+                business_types__name='client',
+            )
     
     def save(self):
         instance = super(ProjectForm, self).save(commit=False)
