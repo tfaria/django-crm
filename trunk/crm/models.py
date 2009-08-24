@@ -46,11 +46,12 @@ class Contact(models.Model):
         symmetrical=False,
         related_name='related_contacts+',
     )
-    locations = models.ManyToManyField(contactinfo.Location)
+    locations = models.ManyToManyField(contactinfo.Location, blank=True)
     
     type = models.CharField(max_length=32, choices=CONTACT_TYPES)
     name = models.CharField(max_length=255, blank=True)
     first_name = models.CharField(max_length=50, blank=True)
+    middle_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50, blank=True)
     sort_name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True)
