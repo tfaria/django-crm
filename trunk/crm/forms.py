@@ -78,7 +78,7 @@ class ProfileForm(forms.ModelForm):
         else:
             qs = qs.exclude(pk=instance.pk)
         instance.slug = slugify_uniquely(
-            '%s %s' % (instance.last_name, instance.first_name),
+            '%s %s' % (instance.first_name, instance.last_name),
             qs,
         )
         instance.sort_name = slugify(
