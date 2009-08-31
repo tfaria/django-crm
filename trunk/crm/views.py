@@ -27,6 +27,7 @@ from django.db.models import Q
 from django.db import transaction
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
+from django.core.mail import send_mass_mail
 
 from caktus.django.forms import AutoCompleterForm
 from caktus.django.decorators import render_with
@@ -794,13 +795,14 @@ def activate_login(request, activation_key):
         )
     if login_registration.contact.user:
         request.session.create_message(
-            'This account is already active.  You may login below.  If you have forgotten your password, you may reset it here as well.'
+            'This account is already active.  Please use the form below to login or reset your password.'
         )
         return HttpResponseRedirect(reverse('auth_login'))
     form = crm_forms.LoginRegistrationForm(request)
     if request.POST and form.is_valid():
         password = form.cleaned_data['password1']
         user = login_registration.activate(password)
+        user.groups = login_registration.groups.all()
         user = authenticate(username=user.username, password=password)
         if user is not None and user.is_active:
             login(request, user)
@@ -815,5 +817,30 @@ def activate_login(request, activation_key):
             return HttpResponseRedirect('/')
     return {
         'login_registration': login_registration,
+        'form': form,
+    }
+
+
+@transaction.commit_on_success
+@render_with('crm/login_registration/create.html')
+def create_registration(request):
+    ids = request.GET.getlist('ids')
+    form = crm_forms.RegistrationGroupForm(request)
+    if request.POST and form.is_valid():
+        emails = []
+        groups = form.cleaned_data['groups']
+        for contact in crm.Contact.objects.filter(pk__in=ids):
+            profile = \
+                crm.LoginRegistration.objects.create_pending_login(contact)
+            if profile:
+                profile.groups = groups
+                emails.append(profile.prepare_email(send=False))
+        if emails:
+            send_mass_mail(emails)
+        request.session.create_message(
+            "Successfully sent %d emails" % len(emails),
+        )
+        return HttpResponseRedirect('/')
+    return {
         'form': form,
     }

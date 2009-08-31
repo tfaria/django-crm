@@ -16,7 +16,7 @@
 import datetime
 
 from django import forms
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib.localflavor.us import forms as us_forms
 from django.db import transaction
 from django.db.models import Q
@@ -338,3 +338,10 @@ class LoginRegistrationForm(RequestForm):
         if self.cleaned_data['password1'] != self.cleaned_data['password2']:
             raise forms.ValidationError('Passwords must match')
         return self.cleaned_data
+
+
+class RegistrationGroupForm(RequestForm):
+    groups = forms.ModelMultipleChoiceField(
+        Group.objects.all(),
+        widget=forms.CheckboxSelectMultiple()
+    )

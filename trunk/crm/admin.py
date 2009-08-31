@@ -24,8 +24,8 @@
 
 from django import forms
 from django.contrib import admin
-from django.contrib.auth.models import User, Group
-from django.core.mail import send_mass_mail
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect
 
 from crm import models as crm
 
@@ -41,11 +41,12 @@ admin.site.register(crm.RelationshipType, RelationshipType)
 
 
 def send_account_activation_email(modeladmin, request, queryset):
-    emails = []
-    for contact in queryset:
-        profile = crm.LoginRegistration.objects.create_pending_login(contact)
-        emails.append(profile.prepare_email())
-    send_mass_mail(emails)
+    selected = request.POST.getlist(admin.ACTION_CHECKBOX_NAME)
+    url = reverse('create_registration')
+    return HttpResponseRedirect("%s?ids=%s" % (
+        url,
+        ",".join(selected)
+    ))
 
 
 class ContactAdmin(admin.ModelAdmin):
