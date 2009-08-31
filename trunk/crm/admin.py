@@ -25,6 +25,7 @@
 from django import forms
 from django.contrib import admin
 from django.contrib.auth.models import User, Group
+from django.core.mail import send_mass_mail
 
 from crm import models as crm
 
@@ -39,10 +40,28 @@ class RelationshipType(admin.ModelAdmin):
 admin.site.register(crm.RelationshipType, RelationshipType)
 
 
+def send_account_activation_email(modeladmin, request, queryset):
+    emails = []
+    for contact in queryset:
+        profile = crm.LoginRegistration.objects.create_pending_login(contact)
+        emails.append(profile.prepare_email())
+    send_mass_mail(emails)
+
+
 class ContactAdmin(admin.ModelAdmin):
     search_fields = ('first_name', 'last_name', 'name', 'email')
     raw_id_fields = ('user',)
     list_display = ('id', 'type', 'name', 'first_name', 'last_name', 'email')
     list_filter = ('type',)
     order_by = ('sortname',)
+    actions = [send_account_activation_email]
 admin.site.register(crm.Contact, ContactAdmin)
+
+
+class LoginRegistrationAdmin(admin.ModelAdmin):
+    list_display = ('contact', 'date', 'activation_key', 'activated')
+    raw_id_fields = ('contact',)
+    list_filter = ('activated', 'date',)
+    order_by = ('date',)
+admin.site.register(crm.LoginRegistration, LoginRegistrationAdmin)
+

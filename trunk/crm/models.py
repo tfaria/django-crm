@@ -12,6 +12,7 @@
 #    You should have received a copy of the BSD License along with django-crm.  
 #    If not, see <http://www.opensource.org/licenses/bsd-license.php>.
 #
+import datetime
 
 from django.db import models
 from django.contrib.auth.models import User, Group, Permission
@@ -21,6 +22,10 @@ from django.contrib.localflavor.us import models as us_models
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.functional import curry
+from django.template.loader import render_to_string
+from django.core.mail import send_mail
+
+from crm import managers as crm_managers
 
 from caktus.django.db.util import slugify_uniquely
 
@@ -260,6 +265,78 @@ class Interaction(models.Model):
     
     def __unicode__(self):
         return "%s: %s" % ( self.date.strftime("%m/%d/%y"), self.type )
+
+
+class LoginRegistration(models.Model):
+    contact = models.ForeignKey(Contact)
+    date = models.DateTimeField()
+    activation_key = models.CharField(max_length=40)
+    activated = models.BooleanField(default=False)
+    
+    objects = crm_managers.RegistrationManager()
+    
+    def activate(self, password):
+        username = slugify_uniquely(
+            self.contact.get_full_name(),
+            User.objects.all(),
+            'username',
+        )
+        user = User.objects.create_user(
+            username,
+            self.contact.email,
+            password,
+        )
+        user.first_name = self.contact.first_name
+        user.last_name = self.contact.last_name
+        user.is_active = True
+        user.save()
+        self.contact.user = user
+        self.contact.save()
+        self.activated = True
+        self.save()
+        return self.contact.user
+    
+    def prepare_email(self, send=True):
+        expiration = getattr(settings, 'ACCOUNT_ACTIVATION_DAYS', 15)
+        current_site = Site.objects.get_current()
+        subject = render_to_string(
+            'crm/login_registration/registration_email_subject.txt', {
+                'site': current_site,
+            }
+        )
+        subject = ''.join(subject.splitlines())
+        message = render_to_string(
+            'crm/login_registration/registration_email.txt', {
+                'activation_key': self.activation_key,
+                'expiration_days': expiration,
+                'site': current_site,
+                'contact': self.contact,
+            },
+        )
+        if send:
+            return send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [self.contact.email],
+                fail_silently=True,
+            )
+        else:
+            return (
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [self.contact.email],
+            )
+    
+    def has_expired(self):
+        expiration_date = datetime.timedelta(
+            days=settings.ACCOUNT_ACTIVATION_DAYS
+        )
+        return (self.date + expiration_date) <= datetime.datetime.now()
+    
+    def __unicode__(self):
+        return "Registration for %s" % self.contact
 
 
 def install():
