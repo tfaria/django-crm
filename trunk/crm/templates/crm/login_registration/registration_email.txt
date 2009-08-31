@@ -1,0 +1,8 @@
+Hi {{ contact.first_name }},
+
+An account has been created for you on the {{ site.name }} website.  Please click the following link to activate your account:
+
+http://{{ site.domain }}{% url activate_login activation_key %}
+
+Thanks,
+{{ site.name }}

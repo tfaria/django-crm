@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block breadcrumb %}
+    {{ block.super }}
+    {% load breadcrumb_tags %}
+    {% add_crumb 'Activate' %}
+{% endblock %}
+
+{% block title %}Activate Account{% endblock %}
+
+{% block content %}
+<h1>Activate account for {{ login_registration.contact }}</h1>
+<p>To activate your account, please create a new password below:</p>
+
+<form action="" method="post" accept-charset="utf-8">
+    <table>
+        {{ form }}
+    </table>
+    <p><input type="submit" value="Create Account &rarr;"></p>
+</form>
+
+{% endblock %}
