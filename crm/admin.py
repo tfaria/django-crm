@@ -42,10 +42,11 @@ admin.site.register(crm.RelationshipType, RelationshipType)
 
 def send_account_activation_email(modeladmin, request, queryset):
     selected = request.POST.getlist(admin.ACTION_CHECKBOX_NAME)
+    selected = ["ids=%d" % pk for pk in selected]
     url = reverse('create_registration')
-    return HttpResponseRedirect("%s?ids=%s" % (
+    return HttpResponseRedirect("%s?%s" % (
         url,
-        ",".join(selected)
+        "&".join(selected)
     ))
 
 
