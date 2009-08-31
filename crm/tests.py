@@ -110,3 +110,41 @@ class ContactTestCase(TestCase):
         )
         self.assertTrue(self.contact.email in message.to)
         self.assertTrue(data['email'] in receipt.to)
+
+
+class LoginRegistrationTestCase(TestCase):
+    def setUp(self):
+        self.contact = crm.Contact.objects.create(
+            first_name='John',
+            last_name='Doe',
+            email='john@doe.com',
+            slug='john-doe',
+            description='',
+            sort_name='doe-john',
+        )
+        self.registration = \
+            crm.LoginRegistration.objects.create_pending_login(self.contact)
+    
+    def testPendingLoginCreation(self):
+        self.registration.prepare_email(send=True)
+        self.assertEqual(len(mail.outbox), 1)
+        url = reverse('activate_login', args=[self.registration.activation_key])
+        self.assertTrue(url in mail.outbox[0].body)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post(url, {
+            'password1': 'abc',
+            'password2': 'abc',
+        }, follow=True)
+        self.assertTrue(
+            self.client.login(username='john@doe.com', password='abc')
+        )
+    
+    def testAlreadyLoggedInActivation(self):
+        user = User.objects.create_user('test', 'test@test.com', 'test')
+        self.client.login(username='test@test.com', password='test')
+        url = reverse('activate_login', args=[self.registration.activation_key])
+        response = self.client.get(url, follow=True)
+        self.assertTrue("already logged in" in response.content)
+    
+    

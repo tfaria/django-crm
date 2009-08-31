@@ -26,6 +26,7 @@ from django.http import HttpResponse, Http404
 from django.db.models import Q
 from django.db import transaction
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login
 
 from caktus.django.forms import AutoCompleterForm
 from caktus.django.decorators import render_with
@@ -770,3 +771,49 @@ def address_book(request, file_name):
         )
     raise Http404
 
+
+@transaction.commit_on_success
+@render_with('crm/login_registration/activate.html')
+def activate_login(request, activation_key):
+    if request.user.is_authenticated():
+        request.session.create_message(
+            "You're already logged in.  Are you sure you need to activate your account?"
+        )
+        return HttpResponseRedirect('/')
+    try:
+        login_registration = crm.LoginRegistration.objects.select_related(
+            'contact__user'
+        ).get(
+            activation_key=activation_key.lower(),
+        )
+    except crm.LoginRegistration.DoesNotExist:
+        raise Http404
+    if login_registration.has_expired():
+        request.session.create_message(
+            'This registration has expired.  Please contact the site administrator for a new registration.'
+        )
+    if login_registration.contact.user:
+        request.session.create_message(
+            'This account is already active.  You may login below.  If you have forgotten your password, you may reset it here as well.'
+        )
+        return HttpResponseRedirect(reverse('auth_login'))
+    form = crm_forms.LoginRegistrationForm(request)
+    if request.POST and form.is_valid():
+        password = form.cleaned_data['password1']
+        user = login_registration.activate(password)
+        user = authenticate(username=user.username, password=password)
+        if user is not None and user.is_active:
+            login(request, user)
+            request.session.create_message(
+                "You've successfully activated your account.",
+            )
+            return HttpResponseRedirect('/')
+        else:
+            request.session.create_message(
+                "Activation failed!",
+            )
+            return HttpResponseRedirect('/')
+    return {
+        'login_registration': login_registration,
+        'form': form,
+    }

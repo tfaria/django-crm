@@ -322,3 +322,19 @@ class EmailContactForm(RequestForm):
             [email],
         ))
         send_mass_mail(messages, fail_silently=True)
+
+
+class LoginRegistrationForm(RequestForm):
+    password1 = forms.CharField(
+        widget=forms.PasswordInput,
+        label='Password',
+    )
+    password2 = forms.CharField(
+        widget=forms.PasswordInput,
+        label='Password (again)',
+    )
+    
+    def clean(self):
+        if self.cleaned_data['password1'] != self.cleaned_data['password2']:
+            raise forms.ValidationError('Passwords must match')
+        return self.cleaned_data

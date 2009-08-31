@@ -101,4 +101,10 @@ urlpatterns = patterns('',
     ),
     
     url(r'^book/(?P<file_name>[\w.]+)$', views.address_book, name='address_book'),
+    
+    url(
+        r'^login-registration/activate/(?P<activation_key>\w+)/$',
+        views.activate_login,
+        name='activate_login',
+    )
 )
