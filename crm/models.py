@@ -272,6 +272,7 @@ class LoginRegistration(models.Model):
     date = models.DateTimeField()
     activation_key = models.CharField(max_length=40)
     activated = models.BooleanField(default=False)
+    groups = models.ManyToManyField(Group, blank=True)
     
     objects = crm_managers.RegistrationManager()
     
