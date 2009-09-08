@@ -200,7 +200,7 @@ def email_contact(request, contact_slug):
     form = crm_forms.EmailContactForm(request, recipients=[contact.email])
     if request.POST and form.is_valid():
         form.save()
-        request.session.create_message('Message sent successfully to %s.' % contact)
+        request.notifications.add('Message sent successfully to %s.' % contact)
         return HttpResponseRedirect(reverse('view_person', args=[contact.id]))
     return {
         'form': form,
@@ -246,7 +246,7 @@ def create_edit_person(request, person_id=None):
                 message = 'Person updated successfully'
             else:
                 message = 'New person created successfully'
-            request.user.message_set.create(message=message)
+            request.notifications.add(message)
             
             if 'associate' in request.REQUEST:
                 return HttpResponseRedirect(
@@ -652,7 +652,7 @@ def associate_contact(request, business, project=None, user_id=None, action=None
             try:
                 user_id = request.REQUEST['search_selection']
             except (ValueError, KeyError):
-                request.session.create_message(
+                request.notifications.add(
                     'Your search for "%s" did not match any contacts. You\
                     may create a new contact here.' % request.POST['search'])
                 return HttpResponseRedirect('%s?associate=%s' % \
@@ -777,7 +777,7 @@ def address_book(request, file_name):
 @render_with('crm/login_registration/activate.html')
 def activate_login(request, activation_key):
     if request.user.is_authenticated():
-        request.session.create_message(
+        request.notifications.add(
             "You're already logged in.  Are you sure you need to activate your account?"
         )
         return HttpResponseRedirect('/')
@@ -790,11 +790,11 @@ def activate_login(request, activation_key):
     except crm.LoginRegistration.DoesNotExist:
         raise Http404
     if login_registration.has_expired():
-        request.session.create_message(
+        request.notifications.add(
             'This registration has expired.  Please contact the site administrator for a new registration.'
         )
     if login_registration.contact.user:
-        request.session.create_message(
+        request.notifications.add(
             'This account is already active.  Please use the form below to login or reset your password.'
         )
         return HttpResponseRedirect(reverse('auth_login'))
@@ -806,12 +806,12 @@ def activate_login(request, activation_key):
         user = authenticate(username=user.username, password=password)
         if user is not None and user.is_active:
             login(request, user)
-            request.session.create_message(
+            request.notifications.add(
                 "You've successfully activated your account.",
             )
             return HttpResponseRedirect('/')
         else:
-            request.session.create_message(
+            request.notifications.add(
                 "Activation failed!",
             )
             return HttpResponseRedirect('/')
@@ -837,7 +837,7 @@ def create_registration(request):
                 emails.append(profile.prepare_email(send=False))
         if emails:
             send_mass_mail(emails)
-        request.session.create_message(
+        request.notifications.add(
             "Successfully sent %d emails" % len(emails),
         )
         return HttpResponseRedirect('/')
