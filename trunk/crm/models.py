@@ -81,6 +81,22 @@ class Contact(models.Model):
                 curry(self._get_TYPE_relations, contact_type=contact_type)
             )
     
+    def is_editable_by(self, user):
+        has_membership = False
+        try:
+            from members.models import Membership
+            has_membership = (
+                Membership.objects.filter(contact=self).count() > 0
+                and self.user == user
+            )
+        except ImportError:
+            pass
+        has_perms = user.has_perms((
+            'crm.add_profile',
+            'crm.change_profile',
+        ))
+        return (has_membership or has_perms)
+    
     def _get_TYPE_relations(self, contact_type):
         return self.contacts.filter(type=contact_type)
     

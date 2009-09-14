@@ -168,7 +168,7 @@ def list_people(request):
     return context
 
 
-@permission_required('crm.view_profile')
+@login_required
 @render_with('crm/person/view.html')
 def view_person(request, person_id):
     try:
@@ -187,6 +187,7 @@ def view_person(request, person_id):
     context = {
         'contact': person,
         'interactions': interactions,
+        'can_edit': person.is_editable_by(request.user),
     }
     return context
 
@@ -208,8 +209,7 @@ def email_contact(request, contact_slug):
     }
 
 
-@permission_required('crm.add_profile')
-@permission_required('crm.change_profile')
+@login_required
 @transaction.commit_on_success
 @render_with('crm/person/create_edit.html')
 def create_edit_person(request, person_id=None):
@@ -223,6 +223,10 @@ def create_edit_person(request, person_id=None):
         profile = None
         location = None
     new_location = not location
+    
+    if not profile.is_editable_by(request.user):
+        return HttpResponseRedirect(reverse('auth_login'))
+    
     if request.POST:
         profile_form = crm_forms.ProfileForm(request.POST, instance=profile)
         location, location_saved, location_context = create_edit_location(

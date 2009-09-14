@@ -14,7 +14,7 @@
 {% block content %}
 <h2>{{ contact }}</h2>
 <ul class='header-actions-left'>
-{% if perms.auth.change_contact %}
+{% if can_edit %}
 	<li><a href='{% url edit_person person_id=contact.id %}?next={% url view_person person_id=contact.id %}'>Edit Person</a></li>
 {% endif %}
 </ul>
@@ -49,33 +49,37 @@
 {% endif %}
 </table>
 
-{% ifnotequal contact.project_contacts.count 0 %}
-	<h3>Projects</h3>
-	<ul class='projects person'>
-	{% for project in contact.project_contacts.all.select_related %}
-		<li><a href='{% url view_project business_id=project.business.id,project_id=project.id %}'>{{ project.name }}</a> ({{ project.business.name }})</li>
-	{% endfor %}
-	</ul>
-{% endifnotequal %}
-
-{% ifnotequal contact.business_relations.count 0 %}
-	<h3>Businesses</h3>
-	<ul class='businesses person'>
-	{% for business in contact.business_relations.select_related %}
-		<li><a href='{% url view_business business_id=business.id %}'>{{ business.name }}</a></li>
-	{% endfor %}
-	</ul>
-{% endifnotequal %}
-
-<h3>Recent Interactions</h3>
-<ul class='header-actions-left'>
-{% if perms.crm.add_interaction %}
-	<li><a href='{% url create_interaction person_id=contact.id %}?next={{ request.path }}'>New Interaction</a></li>
+{% if perms.crm.view_project %}
+    {% ifnotequal contact.project_contacts.count 0 %}
+        <h3>Projects</h3>
+        <ul class='projects person'>
+        {% for project in contact.project_contacts.all.select_related %}
+            <li><a href='{% url view_project business_id=project.business.id,project_id=project.id %}'>{{ project.name }}</a> ({{ project.business.name }})</li>
+        {% endfor %}
+        </ul>
+    {% endifnotequal %}
 {% endif %}
-</ul>
-{% include 'crm/interaction/_list.html' %}
-</table>
+
+{% if perms.crm.view_profile %}
+    {% ifnotequal contact.business_relations.count 0 %}
+        <h3>Businesses</h3>
+        <ul class='businesses person'>
+        {% for business in contact.business_relations.select_related %}
+            <li><a href='{% url view_business business_id=business.id %}'>{{ business.name }}</a></li>
+        {% endfor %}
+        </ul>
+    {% endifnotequal %}
+{% endif %}
+
+{% if perms.crm.view_interaction %}
+    <h3>Recent Interactions</h3>
+    <ul class='header-actions-left'>
+    {% if perms.crm.add_interaction %}
+    	<li><a href='{% url create_interaction person_id=contact.id %}?next={{ request.path }}'>New Interaction</a></li>
+    {% endif %}
+    </ul>
+    {% include 'crm/interaction/_list.html' %}
+{% endif %}
 
 <br style='clear: both;' />
-
 {% endblock %}
