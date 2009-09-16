@@ -232,7 +232,11 @@ def create_edit_person(request, person_id=None):
         pre_save = ''
         if profile:
             pre_save = profile.as_text_block()
-        profile_form = crm_forms.ProfileForm(request.POST, instance=profile)
+        profile_form = crm_forms.ProfileForm(
+            request.POST,
+            instance=profile,
+            request=request,
+        )
         location, location_saved, location_context = create_edit_location(
             request, 
             location,
@@ -291,7 +295,10 @@ def create_edit_person(request, person_id=None):
                 )
             )
     else:
-        profile_form = crm_forms.ProfileForm(instance=profile)
+        profile_form = crm_forms.ProfileForm(
+            instance=profile,
+            request=request,
+        )
         location, location_saved, location_context = create_edit_location(
             request, 
             location,
