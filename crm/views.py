@@ -229,7 +229,9 @@ def create_edit_person(request, person_id=None):
         return HttpResponseRedirect(reverse('auth_login'))
     
     if request.POST:
-        pre_save = profile.as_text_block()
+        pre_save = ''
+        if profile:
+            pre_save = profile.as_text_block()
         profile_form = crm_forms.ProfileForm(request.POST, instance=profile)
         location, location_saved, location_context = create_edit_location(
             request, 
