@@ -349,5 +349,6 @@ class LoginRegistrationForm(RequestForm):
 class RegistrationGroupForm(RequestForm):
     groups = forms.ModelMultipleChoiceField(
         Group.objects.all(),
-        widget=forms.CheckboxSelectMultiple()
+        widget=forms.CheckboxSelectMultiple(),
+        required=False,
     )
