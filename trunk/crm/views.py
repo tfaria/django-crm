@@ -225,7 +225,7 @@ def create_edit_person(request, person_id=None):
         location = None
     new_location = not location
     
-    if not profile.is_editable_by(request.user):
+    if profile and not profile.is_editable_by(request.user):
         return HttpResponseRedirect(reverse('auth_login'))
     
     if request.POST:
