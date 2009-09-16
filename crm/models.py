@@ -31,6 +31,7 @@ from caktus.django.db.util import slugify_uniquely
 
 from contactinfo import models as contactinfo
 
+DEFAULT_ACCOUNT_ACTIVATION_DAYS = 15
 
 CONTACT_TYPES = (
     ('individual', 'Individual'),
@@ -333,7 +334,11 @@ class LoginRegistration(models.Model):
         return self.contact.user
     
     def prepare_email(self, send=True):
-        expiration = getattr(settings, 'ACCOUNT_ACTIVATION_DAYS', 15)
+        expiration = getattr(
+            settings, 
+            'ACCOUNT_ACTIVATION_DAYS', 
+            DEFAULT_ACCOUNT_ACTIVATION_DAYS,
+        )
         current_site = Site.objects.get_current()
         subject = render_to_string(
             'crm/login_registration/registration_email_subject.txt', {
@@ -366,8 +371,13 @@ class LoginRegistration(models.Model):
             )
     
     def has_expired(self):
+        expiration = getattr(
+            settings, 
+            'ACCOUNT_ACTIVATION_DAYS', 
+            DEFAULT_ACCOUNT_ACTIVATION_DAYS,
+        )
         expiration_date = datetime.timedelta(
-            days=settings.ACCOUNT_ACTIVATION_DAYS
+            days=expiration,
         )
         return (self.date + expiration_date) <= datetime.datetime.now()
     

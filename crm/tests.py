@@ -140,7 +140,7 @@ class ContactTestCase(TestCase):
         self.assertTrue(data['email'] in receipt.to)
     
     def testContactEdit(self):
-        self.client.login(username='admin@abc.com', password='abc123')
+        self.client.login(username='admin', password='abc123')
         response = self.client.get(
             reverse('edit_person', args=[self.contact.pk]),
             follow=True,
@@ -265,14 +265,17 @@ class LoginRegistrationTestCase(TestCase):
             'password2': 'abc',
         }, follow=True)
         self.assertTrue(
-            self.client.login(username='john@doe.com', password='abc')
+            self.client.login(
+                username=User.objects.get(email='john@doe.com').username, 
+                password='abc',
+            )
         )
     
     def testAlreadyLoggedInActivation(self):
         user = User.objects.create_user('test', 'test@test.com', 'test')
-        self.client.login(username='test@test.com', password='test')
+        self.client.login(username='test', password='test')
         url = reverse('activate_login', args=[self.registration.activation_key])
         response = self.client.get(url, follow=True)
-        self.assertTrue("already logged in" in response.content)
+        self.assertContains(response, "already logged in")
     
     
