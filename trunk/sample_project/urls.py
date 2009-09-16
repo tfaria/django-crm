@@ -6,7 +6,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    # Example:
+    # crm and contactinfo URLs (required)
     (r'^crm/', include('crm.urls')),
     (r'^contactinfo/', include('contactinfo.urls')),
 
@@ -17,6 +17,7 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the admin:
     (r'^admin/(.*)', admin.site.root),
     
+    # use the contrib.auth login/logout views for authentication (optional)
     url(
         r'^accounts/login/$', 'django.contrib.auth.views.login', 
         name='auth_login',
@@ -24,6 +25,12 @@ urlpatterns = patterns('',
     url(
         r'^accounts/logout/$', 'django.contrib.auth.views.logout', 
         name='auth_logout',
+    ),
+    # redirect '/' to the CRM dashboard (optional)
+    url(
+        '^$', 
+        'django.views.generic.simple.redirect_to', 
+        {'url': '/crm/dashboard/'},
     ),
 )
 
