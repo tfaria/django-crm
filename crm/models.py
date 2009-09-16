@@ -124,6 +124,25 @@ class Contact(models.Model):
         
         return None
     
+    def as_text_block(self):
+        fields = []
+        if self.type == 'individual':
+            fields = [
+                'First Name: %s\n' % self.first_name,
+                'Middle Name: %s\n' % self.middle_name,
+                'Last Name: %s\n' % self.last_name,
+                'Email: %s\n' % self.email,
+            ]
+            for location in self.locations.order_by('id'):
+                for phone in location.phones.order_by('id'):
+                    fields.append('%s Phone: %s\n' % (location.type, phone))
+                for address in location.addresses.order_by('id'):
+                    fields.append('%s Address: %s\n' % (
+                        location.type,
+                        unicode(address).replace("\n", " ")
+                    ))
+        return fields
+    
     def __unicode__(self):
         if self.name:
             name = self.name

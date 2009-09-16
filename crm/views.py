@@ -14,6 +14,7 @@
 #
 
 import datetime
+import difflib
 
 from django.template import RequestContext, Context, loader
 from django.shortcuts import get_object_or_404, render_to_response
@@ -25,9 +26,9 @@ from django.utils import simplejson as json
 from django.http import HttpResponse, Http404
 from django.db.models import Q
 from django.db import transaction
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib.auth import authenticate, login
-from django.core.mail import send_mass_mail
+from django.core.mail import send_mass_mail, send_mail
 
 from caktus.django.forms import AutoCompleterForm
 from caktus.django.decorators import render_with
@@ -228,6 +229,7 @@ def create_edit_person(request, person_id=None):
         return HttpResponseRedirect(reverse('auth_login'))
     
     if request.POST:
+        pre_save = profile.as_text_block()
         profile_form = crm_forms.ProfileForm(request.POST, instance=profile)
         location, location_saved, location_context = create_edit_location(
             request, 
@@ -251,6 +253,26 @@ def create_edit_person(request, person_id=None):
             else:
                 message = 'New person created successfully'
             request.notifications.add(message)
+            post_save = saved_profile.as_text_block()
+            
+            try:
+                group = Group.objects.get(name='Contact Notifications')
+            except Group.DoesNotExist:
+                group = None
+            if group and post_save != pre_save:
+                body = "At %s, %s %s changed the profile of %s:\n\n%s" % (
+                    datetime.datetime.now(),
+                    request.user.first_name,
+                    request.user.last_name,
+                    saved_profile,
+                    ''.join(list(difflib.ndiff(pre_save, post_save))),
+                )
+                send_mail(
+                    'CRM Contact Update: %s' % saved_profile,
+                    body,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [u.email for u in group.user_set.all()],
+                )
             
             if 'associate' in request.REQUEST:
                 return HttpResponseRedirect(
