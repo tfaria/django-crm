@@ -51,10 +51,12 @@
 
 <div id="content-wrapper">
     <div id="content">
-    {% if request.messages %}
-        <ul class="message_list">
-            {% for message in request.messages %}<li>{{ message|escape }}</li>{% endfor %}
-        </ul>
+    {% if notifications %}
+    <ul class="notifications">
+            {% for message in notifications %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+    </ul>
     {% endif %}
         {% block content %}{% endblock %}
         <div class="cleaner"></div>
