@@ -844,7 +844,9 @@ def activate_login(request, activation_key):
             request.notifications.add(
                 "You've successfully activated your account.",
             )
-            return HttpResponseRedirect('/')
+            return HttpResponseRedirect(
+                reverse('view_person', args=[login_registration.contact.pk]),
+            )
         else:
             request.notifications.add(
                 "Activation failed!",
