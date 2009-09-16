@@ -51,6 +51,12 @@ class ProfileForm(forms.ModelForm):
         model = crm.Contact
         fields = ('first_name', 'last_name', 'email', 'notes', 'picture')
     
+    def __init__(self, *args, **kwargs):
+        request = kwargs.pop('request')
+        super(ProfileForm, self).__init__(*args, **kwargs)
+        if not request.user.has_perm('crm.change_contact'):
+            self.fields.pop('notes')
+    
     def clean_email(self):
         if self.cleaned_data['email'] != '':
             emails = crm.Contact.objects.filter(
@@ -327,11 +333,11 @@ class EmailContactForm(RequestForm):
 class LoginRegistrationForm(RequestForm):
     password1 = forms.CharField(
         widget=forms.PasswordInput,
-        label='Password',
+        label='New Password',
     )
     password2 = forms.CharField(
         widget=forms.PasswordInput,
-        label='Password (again)',
+        label='New Password (again)',
     )
     
     def clean(self):
