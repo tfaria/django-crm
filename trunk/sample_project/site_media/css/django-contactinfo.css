@@ -1,0 +1,58 @@
+/* make the location type radio buttons display inline */
+.form .field.type {
+	padding: 0;
+	margin: 0;
+}
+
+.form .field.type ul {
+	list-style-type: none;
+	padding: 0;
+	margin: 0;
+}
+
+.form .field.type li {
+	display: inline;
+	margin-right: 1em;
+}
+
+/* set the size of the street address text area */
+.form .field.street textarea {
+	height: 3em;
+	width: 20em;
+}
+
+/* don't show hidden fields */
+.form .field.hidden {
+	display: none;
+}
+
+/* don't show the delete checkbox for new objects */
+.form .field.new-object.delete {
+	display: none;
+}
+
+/* make the phone type radio buttons display inline */
+.form .field.type ul {
+	list-style-type: none;
+	padding: 0;
+	margin: 0;
+}
+
+.form .field.type li {
+	display: inline;
+	margin-right: 0.5em;
+}
+
+/* hide all form labels except for delete in the phone_formset */
+.phone_formset .field span.label {
+	display: none;
+}
+.phone_formset .field.delete span.label {
+	display: block;
+}
+
+/* remove padding on the top level phone_formset td, since it is added in the inner table */
+tbody.phone_formset > tr > td {
+	padding: 0;
+	margin: 0;
+}
