@@ -1,3 +1,4 @@
+BEGIN;
 ALTER TABLE crm_projectrelationshiptype RENAME TO crm_relationshiptype;
 ALTER SEQUENCE crm_projectrelationshiptype_id_seq RENAME TO crm_relationshiptype_id_seq;
 ALTER TABLE crm_projectrelationship_types RENAME column projectrelationshiptype_id TO relationshiptype_id;
@@ -11,4 +12,4 @@ CREATE TABLE "crm_businessrelationship_types" (
     "relationshiptype_id" integer NOT NULL REFERENCES "crm_relationshiptype" ("id") DEFERRABLE INITIALLY DEFERRED,
     UNIQUE ("businessrelationship_id", "relationshiptype_id")
 );
-
+COMMIT;
