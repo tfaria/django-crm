@@ -62,8 +62,8 @@ class Contact(models.Model):
     sort_name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True)
     email = models.EmailField(blank=True)
-    description = models.TextField(null=True, blank=True)
-    notes = models.TextField(null=True, blank=True)
+    description = models.TextField(blank=True)
+    notes = models.TextField(blank=True)
     picture = models.ImageField(null=True, blank=True, max_length=1048576, upload_to="picture/profile/")
     
     # used for migration
