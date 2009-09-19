@@ -161,6 +161,9 @@ class ContactRelationship(models.Model):
     from_contact = models.ForeignKey('Contact', related_name='from_contacts')
     to_contact = models.ForeignKey('Contact', related_name='to_contacts')
 
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    
     class Meta:
         unique_together = ('from_contact', 'to_contact')
 
