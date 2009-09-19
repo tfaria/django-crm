@@ -103,12 +103,17 @@ class BusinessForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(BusinessForm, self).__init__(*args, **kwargs)
 
-        self.fields['business_types'].label = 'Type(s)'
-        self.fields['business_types'].widget = \
-          caktus_widgets.CheckboxSelectMultipleWithJS(
-            choices = self.fields['business_types'].choices
-        )
-        self.fields['business_types'].help_text = ''
+        self.fields['business_types'].choices = \
+            list(self.fields['business_types'].choices)
+        if len(self.fields['business_types'].choices) == 0:
+            self.fields.pop('business_types')
+        else:
+            self.fields['business_types'].label = 'Type(s)'
+            self.fields['business_types'].widget = \
+              caktus_widgets.CheckboxSelectMultipleWithJS(
+                choices = self.fields['business_types'].choices
+            )
+            self.fields['business_types'].help_text = ''
 
     def save(self, commit=True):
         instance = super(BusinessForm, self).save(commit=False)
