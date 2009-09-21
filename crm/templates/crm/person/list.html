@@ -45,10 +45,7 @@
 		<td class='phone'>
     {% for location in person.locations.all %}
         {% for phone in location.phones.all %}
-			<a href='sip://1-{{ phone }}'>{{ phone }}</a> ({{ location.type }} {{ phone.type }})
-			{% if not forloop.last %}
-				<br />
-			{% endif %}
+			<a href='sip://1-{{ phone }}'>{{ phone }}</a> ({{ phone.type }})<br />
 		{% endfor %}
     {% endfor %}
 		</td>

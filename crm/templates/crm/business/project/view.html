@@ -29,10 +29,6 @@
 {% if perms.crm.change_project %}
 	<li><a href='{% url edit_project business_id=project.business.id,project_id=project.id %}'>Edit project</a></li>
 {% endif %}
-{#% if perms.ledger.add_exchange %#}
-{#	<li><a href='{% url create_exchange exchange_type_slug="invoice",business_id=project.business.id,project_id=project.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'>Invoice</a></li>#}
-{#	<li><a href='{% url create_exchange exchange_type_slug="receipt",business_id=project.business.id,project_id=project.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'>Receipt</a></li>#}
-{#% endif %#}
 	<li><a href='{% url view_business business_id=project.business.id %}'>Return to {{ project.business.name }}</a></li>
 </ul>
 
@@ -66,18 +62,6 @@
 
 {% if project.notes %}
 	<p>{{ project.notes }}</p>
-{% endif %}
-
-{% if exchanges %}
-<h3>Exchanges</h3>
-{% if exchange_type %}
-	{% load pagination_tags %}
-	{% autopaginate exchanges %}
-{% endif %}
-
-{% paginate %}
-{% regroup exchanges by type as type_list %}
-{% include 'crm/business/_exchange_list.html' %}
 {% endif %}
 
 {% endblock %}

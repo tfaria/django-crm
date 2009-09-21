@@ -214,11 +214,15 @@ class Project(models.Model):
     
     name = models.CharField(max_length = 255)
     trac_environment = models.CharField(max_length = 255, blank=True, null=True)
-    business = models.ForeignKey(Contact, related_name='projects')
+    business = models.ForeignKey(
+        Contact, 
+        related_name='business_projects', 
+        limit_choices_to={'type': 'business'},
+    )
     point_person = models.ForeignKey(User, limit_choices_to= {'is_staff':True})
     contacts = models.ManyToManyField(
         Contact,
-        related_name='project_contacts',
+        related_name='contact_projects',
         through='ProjectRelationship',
     )
     
@@ -246,7 +250,7 @@ class ProjectRelationship(models.Model):
         related_name='project_relationships',
         blank=True,
     )
-    contact = models.ForeignKey(Contact)
+    contact = models.ForeignKey(Contact, limit_choices_to={'type': 'individual'})
     project = models.ForeignKey(Project)
     
     class Meta:

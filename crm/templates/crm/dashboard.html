@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{#% load ledger %#}
 
 {% block title %}Dashboard{% endblock %}
 
@@ -32,10 +31,6 @@
 			{% endfor %}
 		{% endifequal %}
 		</ul>
-    
-	{% if recent_exchanges %}
-        {#% include 'books/ledger/_recent_exchanges.html' %#}
-	{% endif %}
 	</div>
 </div>
 

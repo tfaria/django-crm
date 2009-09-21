@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{#% load ledger %#}
 
 {% block title %}Projects{% endblock %}
 
@@ -28,14 +27,12 @@
 	<tr>
 		<th>Name</th>
 		<th>Business</th>
-		<th>Outstanding Balance</th>
 		<th>Description</th>
 	</tr>
 	{% for project in projects %}
 	<tr>
 		<td><a href='{% url view_project business_id=project.business.id,project_id=project.id %}'>{{ project.name }}</a></td>
 		<td>{{ project.business }}</td>
-		{#<td class='ledger number'>${{ project.balance|currency }}</td>#}
 		<td>{{ project.description }}</td>
 	</tr>
 	{% endfor %}

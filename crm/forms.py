@@ -135,9 +135,9 @@ class EmailForm(forms.Form):
     
     def clean_to(self):
         try:
-            return User.objects.get(pk=self.cleaned_data['to'])
-        except User.DoesNotExist:
-            raise forms.ValidationError(_(u'This username is already taken. Please choose another.'))
+            return crm.Contact.objects.get(pk=self.cleaned_data['to'])
+        except crm.Contact.DoesNotExist:
+            raise forms.ValidationError(_(u'That is not a valid contact.'))
         
         return self.cleaned_data['to']
     
@@ -149,7 +149,7 @@ class EmailForm(forms.Form):
         
         if project:
             # ignore business contacts if a project is set
-            search = Q(projects=project)
+            search = Q(contact_projects=project)
         elif business:
             search = Q(businesses=business)
         
@@ -157,8 +157,8 @@ class EmailForm(forms.Form):
         
         if search:
             self.fields['to'].choices = []
-            for user in User.objects.filter(search):
-                choice = (user.id, "%s (%s)" % (user.get_full_name(), user.email))
+            for contact in crm.Contact.objects.filter(search):
+                choice = (contact.id, "%s (%s)" % (contact.get_full_name(), contact.email))
                 self.fields['to'].choices.append(choice)
 
 
