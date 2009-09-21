@@ -61,7 +61,7 @@ def dashboard(request):
             'project__business',
         ).filter(completed=True)[:6]
 
-        projects = request.contact.project_contacts.order_by(
+        projects = request.contact.contact_projects.order_by(
             'name',
         ).select_related('business')
     else:
@@ -135,7 +135,6 @@ def quick_search(request):
                     'element_class': 'contact',
                 })
                 results.sort(compare_by('label'))
-    print json.dumps(results[:10])
     return HttpResponse(json.dumps(results[:10]), mimetype="text/json")
 
 
@@ -498,10 +497,10 @@ def view_business(request, business):
     try:
         from ledger.models import Exchange
         exchanges = Exchange.objects.filter(business=business)
-        if business.projects.count() > 0:
+        if business.business_projects.count() > 0:
             exchanges = exchanges.filter(
                 Q(transactions__project__isnull=True) |
-                ~Q(transactions__project__in=business.projects.all())
+                ~Q(transactions__project__in=business.business_projects.all())
             )
         exchanges = exchanges.distinct().select_related().order_by(
             'type',
@@ -651,7 +650,6 @@ def view_project(request, business, project):
             business=business,
             transactions__project=project,
         ).distinct().select_related().order_by('type', '-date', '-id',)
-        print context['exchanges']
         context['show_delivered_column'] = \
             context['exchanges'].filter(type__deliverable=True).count() > 0
     except ImportError:
@@ -739,7 +737,7 @@ def associate_contact(request, business, project=None, user_id=None, action=None
 @transaction.commit_on_success
 @render_with('crm/business/project/relationship.html')
 def edit_project_relationship(request, business, project, user_id):
-    user = get_object_or_404(crm.Contact, pk=user_id, project_contacts=project)
+    user = get_object_or_404(crm.Contact, pk=user_id, projects=project)
     rel = crm.ProjectRelationship.objects.get(project=project, contact=user)
     relationship_form = crm_forms.ProjectRelationshipForm(
         request,

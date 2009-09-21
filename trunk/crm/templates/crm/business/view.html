@@ -42,11 +42,6 @@
 {% if perms.crm.change_business %}
 	<li><a href='{% url edit_business business_id=business.id %}?next={% url view_business business_id=business.id %}'>Edit</a></li>
 {% endif %}
-{% if perms.ledger.add_exchange %}
-	{% for type in business.exchange_types %}
-	<li><a href='{% url create_exchange exchange_type_slug=type.slug,business_id=business.id %}?next={% url view_business business_id=business.id %}'>{{ type.label }}</a></li>
-	{% endfor %}
-{% endif %}
 </ul>
 
 <div id='sidebar'>
@@ -103,7 +98,7 @@
 	</tr>
 </table>
 
-{% ifequal business.projects.count 0 %}
+{% ifequal business.business_projects.count 0 %}
 	<p>No projects exist for this {% trans "business" %}.  <a href='{% url create_project business_id=business.id %}'>Create one now...</a></p>
 {% else %}
 	<h3>Projects</h3>
@@ -115,7 +110,7 @@
 			<th>Point Person</th>
 			<th>Description</th>
 		</tr>
-		{% for project in business.projects.all %}
+		{% for project in business.business_projects.all %}
 		<tr>
 			<td><a href='{% url view_project business_id=business.id,project_id=project.id %}'>{{ project.name }}</a></td>
 			<td>{{ project.type }}</td>
@@ -129,7 +124,5 @@
 		<a href='{% url create_project business_id=business.id %}'>New project for {{ business }}...</a>
 	</p>
 {% endifequal %}
-
-{#% include 'crm/business/_exchange_list.html' %#}
 
 {% endblock %}
