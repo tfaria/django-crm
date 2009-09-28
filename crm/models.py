@@ -23,11 +23,10 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.functional import curry
 from django.template.loader import render_to_string
+from django.template.defaultfilters import slugify
 from django.core.mail import send_mail
 
 from crm import managers as crm_managers
-
-from caktus.django.db.util import slugify_uniquely
 
 from contactinfo import models as contactinfo
 
@@ -37,6 +36,26 @@ CONTACT_TYPES = (
     ('individual', 'Individual'),
     ('business', 'Business'),
 )
+
+def slugify_uniquely(s, queryset=None, field='slug'):
+    """
+    Returns a slug based on 's' that is unique for all instances of the given
+    field in the given queryset.
+    
+    If no string is given or the given string contains no slugify-able
+    characters, default to the given field name + N where N is the number of
+    default slugs already in the database.
+    """
+    new_slug = new_slug_base = slugify(s)
+    if queryset:
+        queryset = queryset.filter(**{'%s__startswith' % field: new_slug_base})
+        similar_slugs = [value[0] for value in queryset.values_list(field)]
+        i = 1
+        while new_slug in similar_slugs:
+            new_slug = "%s%d" % (new_slug_base, i)
+            i += 1
+    return new_slug
+
 
 class Contact(models.Model):
     user = models.ForeignKey(User, null=True, blank=True, unique=True)
@@ -143,6 +162,11 @@ class Contact(models.Model):
                         unicode(address).replace("\n", " ")
                     ))
         return fields
+    
+    class Meta:
+        permissions = (
+            ("access_xmlrpc", "Can access minibooks XML-RPC service"),
+        )
     
     def __unicode__(self):
         if self.name:

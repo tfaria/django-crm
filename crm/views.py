@@ -31,14 +31,13 @@ from django.contrib.auth import authenticate, login
 from django.core.mail import send_mass_mail, send_mail
 
 from caktus.django.forms import AutoCompleterForm
-from caktus.django.decorators import render_with
-from caktus.iter import all_true
 
 from contactinfo.helpers import create_edit_location
 from contactinfo import models as contactinfo
 
 from crm import models as crm
 from crm import forms as crm_forms
+from crm.decorators import render_with
 
 
 @login_required
@@ -198,11 +197,20 @@ def email_contact(request, contact_slug):
         contact = crm.Contact.objects.select_related().get(slug=contact_slug)
     except crm.Contact.DoesNotExist:
         raise Http404
-    form = crm_forms.EmailContactForm(request, recipients=[contact.email])
-    if request.POST and form.is_valid():
-        form.save()
-        request.notifications.add('Message sent successfully to %s.' % contact)
-        return HttpResponseRedirect(reverse('view_person', args=[contact.id]))
+    if request.POST:
+        form = crm_forms.EmailContactForm(
+            request.POST, 
+            recipients=[contact.email],
+        )
+        if form.is_valid():
+            form.save()
+            request.notifications.add(
+                'Message sent successfully to %s.' % contact
+            )
+            view_person_url = reverse('view_person', args=[contact.id])
+            return HttpResponseRedirect(view_person_url)
+    else:
+        form = crm_forms.EmailContactForm(recipients=[contact.email])
     return {
         'form': form,
         'contact': contact,
@@ -314,8 +322,8 @@ def create_edit_person(request, person_id=None):
 @transaction.commit_on_success
 @render_with('crm/person/register.html')
 def register_person(request):
-    form = crm_forms.PersonForm(request)
     if request.POST:
+        form = crm_forms.PersonForm(request.POST)
         if form.is_valid():
             email = {
                 'template': 'crm/person/new_account_email.txt',
@@ -324,6 +332,8 @@ def register_person(request):
             }
             user = form.save(email)
             return HttpResponseRedirect(reverse('auth_login'))
+    else:
+        form = crm_forms.PersonForm()
 
     context = {
         'form': form,
@@ -379,18 +389,24 @@ def create_edit_interaction(request, person_id=None, interaction_id=None):
     else:
         person = None
     
-    form = crm_forms.InteractionForm(
-        request, 
-        instance=interaction,
-        person=person,
-        crm_user=request.contact,
-        url=reverse('quick_add_person'),
-    )
-    
-    if request.POST and form.is_valid():
-        form.save()
-        return HttpResponseRedirect(reverse('list_interactions'))
-    
+    if request.POST:
+        form = crm_forms.InteractionForm(
+            request, 
+            instance=interaction,
+            person=person,
+            crm_user=request.contact,
+            url=reverse('quick_add_person'),
+        )
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(reverse('list_interactions'))
+    else:
+        form = crm_forms.InteractionForm(
+            instance=interaction,
+            person=person,
+            crm_user=request.contact,
+            url=reverse('quick_add_person'),
+        )
     context = {
         'form': form,
         'person': person,
@@ -582,13 +598,16 @@ def edit_business_relationship(request, business, user_id):
         from_contact=business,
         to_contact=contact,
     )
-    relationship_form = crm_forms.ContactRelationshipForm(
-        request,
-        instance=rel,
-    )
-    if request.POST and relationship_form.is_valid():
-        rel = relationship_form.save()
-        return HttpResponseRedirect(request.REQUEST['next'])
+    if request.POST:
+        relationship_form = crm_forms.ContactRelationshipForm(
+            request.POST,
+            instance=rel,
+        )
+        if relationship_form.is_valid():
+            rel = relationship_form.save()
+            return HttpResponseRedirect(request.REQUEST['next'])
+    else:
+        relationship_form = crm_forms.ContactRelationshipForm(instance=rel)
     
     context = {
         'user': contact,
@@ -739,13 +758,16 @@ def associate_contact(request, business, project=None, user_id=None, action=None
 def edit_project_relationship(request, business, project, user_id):
     user = get_object_or_404(crm.Contact, pk=user_id, projects=project)
     rel = crm.ProjectRelationship.objects.get(project=project, contact=user)
-    relationship_form = crm_forms.ProjectRelationshipForm(
-        request,
-        instance=rel,
-    )
-    if request.POST and relationship_form.is_valid():
-        rel = relationship_form.save()
-        return HttpResponseRedirect(request.REQUEST['next'])
+    if request.POST:
+        relationship_form = crm_forms.ProjectRelationshipForm(
+            request,
+            instance=rel,
+        )
+        if relationship_form.is_valid():
+            rel = relationship_form.save()
+            return HttpResponseRedirect(request.REQUEST['next'])
+    else:
+        relationship_form = crm_forms.ProjectRelationshipForm(instance=rel)
     
     context = {
         'user': user,
@@ -831,25 +853,28 @@ def activate_login(request, activation_key):
             'This account is already active.  Please use the form below to login or reset your password.'
         )
         return HttpResponseRedirect(reverse('auth_login'))
-    form = crm_forms.LoginRegistrationForm(request)
-    if request.POST and form.is_valid():
-        password = form.cleaned_data['password1']
-        user = login_registration.activate(password)
-        user.groups = login_registration.groups.all()
-        user = authenticate(username=user.username, password=password)
-        if user is not None and user.is_active:
-            login(request, user)
-            request.notifications.add(
-                "You've successfully activated your account.",
-            )
-            return HttpResponseRedirect(
-                reverse('view_person', args=[login_registration.contact.pk]),
-            )
-        else:
-            request.notifications.add(
-                "Activation failed!",
-            )
-            return HttpResponseRedirect('/')
+    if request.POST:
+        form = crm_forms.LoginRegistrationForm(request.POST)
+        if form.is_valid():
+            password = form.cleaned_data['password1']
+            user = login_registration.activate(password)
+            user.groups = login_registration.groups.all()
+            user = authenticate(username=user.username, password=password)
+            if user is not None and user.is_active:
+                login(request, user)
+                request.notifications.add(
+                    "You've successfully activated your account.",
+                )
+                return HttpResponseRedirect(
+                    reverse('view_person', args=[login_registration.contact.pk]),
+                )
+            else:
+                request.notifications.add(
+                    "Activation failed!",
+                )
+                return HttpResponseRedirect('/')
+    else:
+        form = crm_forms.LoginRegistrationForm()
     return {
         'login_registration': login_registration,
         'form': form,
@@ -860,22 +885,25 @@ def activate_login(request, activation_key):
 @render_with('crm/login_registration/create.html')
 def create_registration(request):
     ids = request.GET.getlist('ids')
-    form = crm_forms.RegistrationGroupForm(request)
-    if request.POST and form.is_valid():
-        emails = []
-        groups = form.cleaned_data['groups']
-        for contact in crm.Contact.objects.filter(pk__in=ids):
-            profile = \
-                crm.LoginRegistration.objects.create_pending_login(contact)
-            if profile:
-                profile.groups = groups
-                emails.append(profile.prepare_email(send=False))
-        if emails:
-            send_mass_mail(emails)
-        request.notifications.add(
-            "Successfully sent %d emails" % len(emails),
-        )
-        return HttpResponseRedirect('/')
+    if request.POST:
+        form = crm_forms.RegistrationGroupForm(request.POST)
+        if form.is_valid():
+            emails = []
+            groups = form.cleaned_data['groups']
+            for contact in crm.Contact.objects.filter(pk__in=ids):
+                profile = \
+                    crm.LoginRegistration.objects.create_pending_login(contact)
+                if profile:
+                    profile.groups = groups
+                    emails.append(profile.prepare_email(send=False))
+            if emails:
+                send_mass_mail(emails)
+            request.notifications.add(
+                "Successfully sent %d emails" % len(emails),
+            )
+            return HttpResponseRedirect('/')
+    else:
+        form = crm_forms.RegistrationGroupForm()
     return {
         'form': form,
     }
