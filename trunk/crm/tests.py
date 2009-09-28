@@ -60,7 +60,8 @@ class XMLRPCTestCase(TestCase):
             'abc123',
         )
         self.admin.user_permissions = Permission.objects.filter(
-            content_type__in=ContentType.objects.filter(app_label='crm')
+            content_type__in=ContentType.objects.filter(app_label='crm'),
+            codename='access_xmlrpc',
         )
         self.rpc_client = xmlrpclib.ServerProxy(
             'http://localhost:8000/xml-rpc/',

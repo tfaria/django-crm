@@ -10,8 +10,6 @@ from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
 
-from caktus.django.db.util import slugify_uniquely
-
 
 class RegistrationManager(models.Manager):
     def create_pending_login(self, contact):

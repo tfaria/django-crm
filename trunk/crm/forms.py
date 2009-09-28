@@ -22,24 +22,85 @@ from django.db import transaction
 from django.db.models import Q
 from django.template.defaultfilters import slugify
 from django.conf import settings
-from django.core.mail import send_mail, send_mass_mail
+from django.core.mail import EmailMessage, send_mail, send_mass_mail
 from django.template.loader import render_to_string
+from django.template import RequestContext
 
-from caktus.django.forms import SimpleUserForm, RequestForm, RequestModelForm
-from caktus.django.widgets import CheckboxSelectMultipleWithJS
-from caktus.decorators import requires_kwarg
 from caktus.django import widgets as caktus_widgets
-from caktus.django.db.util import slugify_uniquely
 
-import crm.models as crm
+from crm import models as crm
+from crm.models import slugify_uniquely
+
+def send_user_email(request, user, email_dict):
+    context = {
+        'user': user,
+    }
+    context.update(email_dict.get('extra_context', {}))
+    email = EmailMessage(subject=email_dict['subject'])
+    if request:
+        email.body = render_to_string(
+            email_dict['template'],
+            context,
+            context_instance=RequestContext(request),
+        )
+    else:
+        email.body = render_to_string(email_dict['template'], context)
+    default_from = 'no-reply@example.com'
+    default_from = getattr(settings, 'DEFAULT_EMAIL_FROM', default_from)
+    default_from = getattr(settings, 'DEFAULT_FROM_EMAIL', default_from)
+    email.from_email = email_dict.get('from', default_from)
+    email.to = ["%s %s <%s>" % (user.first_name, user.last_name, user.email)]
+    email.send()
 
 
-class PersonForm(SimpleUserForm):
+class PersonForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'email')
+    
+    def __init__(self, *args, **kwargs):
+        super(PersonForm, self).__init__(*args, **kwargs)
+        # default to required for email field.  Override this in your view if you need to.
+        self.fields['email'].required = True
+    
     def clean_email(self):
         if not self.instance.id and \
           User.objects.filter(email=self.cleaned_data['email']).count() > 0:
             raise forms.ValidationError('A user with that e-mail address already exists.')
         return self.cleaned_data['email']
+    
+    def save(self, email_dict=None, request=None):
+        email_enabled = getattr(settings, 'CAKTUS_EMAIL_ENABLED', True)
+        if self.instance.id:
+            user = super(PersonForm, self).save()
+            created = False
+        else:
+            try:
+                user = User.objects.get(email=self.cleaned_data['email'])
+                created = False
+            except User.DoesNotExist:
+                user = super(PersonForm, self).save(commit=False)
+                created = True
+                if not email_enabled:
+                    user.set_password(settings.CAKTUS_DEBUG_PASSWORD)
+                username_base = "%s%s" % (user.first_name, user.last_name)
+                if username_base == '': username_base = user.email
+                user.username = slugify_uniquely(
+                    username_base[:20], 
+                    queryset=User.objects.all(), 
+                    field='username',
+                )
+                user.save()
+                self.save_m2m()
+        if email_dict and email_enabled:
+            if 'extra_context' not in email_dict:
+                email_dict['extra_context'] = {}
+            email_dict['extra_context']['user_is_new'] = created
+            if created:
+                password = reset_user_password(user)
+                email_dict['extra_context']['password'] = password
+            send_user_email(request, user, email_dict)
+        return user, created
 
 
 class ProfileForm(forms.ModelForm):
@@ -71,25 +132,19 @@ class ProfileForm(forms.ModelForm):
     @transaction.commit_on_success
     def save(self):
         instance = super(ProfileForm, self).save(commit=False)
-        qs = crm.Contact.objects.filter(type='individual')
-        new_instance = not instance.id
+        qs = crm.Contact.objects.all()
+        if not instance.pk:
+            qs = qs.exclude(pk=instance.pk)
+        instance.slug = slugify_uniquely(instance.get_full_name(), qs)
         if instance.user:
             instance.user.first_name = instance.first_name
             instance.user.last_name = instance.last_name
             instance.user.email = instance.email
             instance.user.save()
-        if new_instance:
+        if instance.description is None:
             instance.description = ''
-            instance.type = 'individual'
-        else:
-            qs = qs.exclude(pk=instance.pk)
-        instance.slug = slugify_uniquely(
-            '%s %s' % (instance.first_name, instance.last_name),
-            qs,
-        )
-        instance.sort_name = slugify(
-            '%s %s' % (instance.last_name, instance.first_name),
-        )
+        instance.type = 'individual'
+        instance.sort_name = slugify(instance.get_full_name())
         instance.save()
         self.save_m2m()
         return instance
@@ -110,20 +165,19 @@ class BusinessForm(forms.ModelForm):
         else:
             self.fields['business_types'].label = 'Type(s)'
             self.fields['business_types'].widget = \
-              caktus_widgets.CheckboxSelectMultipleWithJS(
+              forms.CheckboxSelectMultiple(
                 choices = self.fields['business_types'].choices
             )
             self.fields['business_types'].help_text = ''
 
     def save(self, commit=True):
         instance = super(BusinessForm, self).save(commit=False)
-        qs = crm.Contact.objects.filter(type='business')
-        if not instance.pk:
-            instance.type = 'business'
-        else:
+        qs = crm.Contact.objects.all()
+        if instance.pk:
             qs = qs.exclude(pk=instance.pk)
         instance.slug = slugify_uniquely(instance.name, qs)
         instance.sort_name = slugify(instance.name)
+        instance.type = 'business'
         if commit:
             instance.save()
         return instance
@@ -167,7 +221,7 @@ class UserModelChoiceField(forms.ModelMultipleChoiceField):
         return obj.get_full_name()
 
 
-class InteractionForm(RequestModelForm):
+class InteractionForm(forms.ModelForm):
     class Meta:
         model = crm.Interaction
         fields = ('date', 'type', 'completed', 'project', 'contacts', 'memo',)
@@ -184,7 +238,7 @@ class InteractionForm(RequestModelForm):
             widget=caktus_widgets.AjaxSelectMultiWidget(url=self.url),
             queryset=crm.Contact.objects.filter(type='individual'),
         )
-        if not self.request.POST:
+        if not self.is_bound:
             if self.instance.id:
                 initial_choices = \
                     self.instance.contacts.values_list('id', flat=True)
@@ -211,7 +265,9 @@ class InteractionForm(RequestModelForm):
         
         self.fields['project'].queryset = projects
         
-        self.fields['date'].widget = caktus_widgets.MooDate()
+        self.fields['date'].widget = forms.TextInput(
+            attrs={'class': 'crm-date-field'},
+        )
         self.fields['date'].initial = datetime.datetime.now()
         
     def save(self):
@@ -229,7 +285,7 @@ class SearchForm(forms.Form):
     search = forms.CharField(required=False)
 
 
-class ContactRelationshipForm(RequestModelForm):
+class ContactRelationshipForm(forms.ModelForm):
     class Meta:
         model = crm.ContactRelationship
         fields = ('types',)
@@ -265,7 +321,6 @@ class ProjectForm(forms.ModelForm):
             'description',
         )
 
-    @requires_kwarg('business')
     def __init__(self, *args, **kwargs):
         self.business = kwargs.pop('business')
         super(ProjectForm, self).__init__(*args, **kwargs)
@@ -286,7 +341,7 @@ class ProjectForm(forms.ModelForm):
         return instance
 
 
-class ProjectRelationshipForm(RequestModelForm):
+class ProjectRelationshipForm(forms.ModelForm):
     class Meta:
         model = crm.ProjectRelationship
         fields = ('types',)
@@ -299,7 +354,7 @@ class ProjectRelationshipForm(RequestModelForm):
         self.fields['types'].help_text = ''
 
 
-class EmailContactForm(RequestForm):
+class EmailContactForm(forms.Form):
     name = forms.CharField()
     email = forms.EmailField()
     message = forms.CharField(widget=forms.Textarea)
@@ -335,7 +390,7 @@ class EmailContactForm(RequestForm):
         send_mass_mail(messages, fail_silently=True)
 
 
-class LoginRegistrationForm(RequestForm):
+class LoginRegistrationForm(forms.Form):
     password1 = forms.CharField(
         widget=forms.PasswordInput,
         label='New Password',
@@ -351,7 +406,7 @@ class LoginRegistrationForm(RequestForm):
         return self.cleaned_data
 
 
-class RegistrationGroupForm(RequestForm):
+class RegistrationGroupForm(forms.Form):
     groups = forms.ModelMultipleChoiceField(
         Group.objects.all(),
         widget=forms.CheckboxSelectMultiple(),

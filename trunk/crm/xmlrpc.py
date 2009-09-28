@@ -23,9 +23,8 @@ from django.contrib import auth
 from django.forms.fields import email_re
 from django.contrib.auth.models import User
 
-from caktus.django.decorators import has_perm_or_basicauth
-
 from crm import models as crm
+from crm.decorators import has_perm_or_basicauth
 
 try:
     # Python 2.5
