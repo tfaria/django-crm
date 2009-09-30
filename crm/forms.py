@@ -25,11 +25,15 @@ from django.conf import settings
 from django.core.mail import EmailMessage, send_mail, send_mass_mail
 from django.template.loader import render_to_string
 from django.template import RequestContext
+from django.core.urlresolvers import reverse
 
-from caktus.django import widgets as caktus_widgets
+from ajax_select.fields import AutoCompleteSelectMultipleField, \
+                               AutoCompleteSelectField, \
+                               AutoCompleteSelectWidget
 
 from crm import models as crm
 from crm.models import slugify_uniquely
+from crm.widgets import DateInput
 
 def send_user_email(request, user, email_dict):
     context = {
@@ -218,6 +222,45 @@ class EmailForm(forms.Form):
                 self.fields['to'].choices.append(choice)
 
 
+class AssociateContactForm(forms.Form):
+    contact = AutoCompleteSelectField('contact')
+    
+    def save(self):
+        return self.cleaned_data['contact']
+
+
+class CharAutoCompleteSelectWidget(AutoCompleteSelectWidget):
+    def value_from_datadict(self, data, files, name):
+        return data.get(name, None)
+
+
+class QuickSearchForm(forms.Form):
+    quick_search = AutoCompleteSelectField(
+        'quick_search',
+        widget=CharAutoCompleteSelectWidget('quick_search'),
+    )
+    
+    def clean_quick_search(self):
+        item = self.cleaned_data['quick_search']
+        if isinstance(item, crm.Project):
+            return reverse('view_project', kwargs={
+                'business_id': item.business.id,
+                'project_id': item.id,
+            })
+        elif isinstance(item, crm.Contact) and item.type == 'individual':
+            return reverse('view_person', kwargs={
+                'person_id': item.id,
+            })
+        elif isinstance(item, crm.Contact) and item.type == 'business':
+            return reverse('view_business', kwargs={
+                'business_id': item.id,
+            })
+        raise forms.ValidationError('Must be a Contact or Project')
+    
+    def save(self):
+        return self.cleaned_data['quick_search']
+
+
 class UserModelChoiceField(forms.ModelMultipleChoiceField):
     def label_from_instance(self, obj):
         return obj.get_full_name()
@@ -229,17 +272,14 @@ class InteractionForm(forms.ModelForm):
         fields = ('date', 'type', 'completed', 'project', 'contacts', 'memo',)
     
     def __init__(self, *args, **kwargs):    
-        self.url = kwargs.pop('url')
         self.person = kwargs.pop('person')
         self.crm_user = kwargs.pop('crm_user')
         super(InteractionForm, self).__init__(*args, **kwargs)
         self.fields.keyOrder = \
             ('date', 'type', 'completed', 'contacts', 'project', 'memo',)
         
-        self.fields['contacts'] = UserModelChoiceField(
-            widget=caktus_widgets.AjaxSelectMultiWidget(url=self.url),
-            queryset=crm.Contact.objects.filter(type='individual'),
-        )
+        self.fields['contacts'] = AutoCompleteSelectMultipleField('contact')
+        
         if not self.is_bound:
             if self.instance.id:
                 initial_choices = \
@@ -267,10 +307,10 @@ class InteractionForm(forms.ModelForm):
         
         self.fields['project'].queryset = projects
         
-        self.fields['date'].widget = forms.TextInput(
-            attrs={'class': 'crm-date-field'},
-        )
-        self.fields['date'].initial = datetime.datetime.now()
+        self.fields['date'].widget = DateInput(date_format='%m/%d/%Y')
+        self.fields['date'].input_formats = ('%m/%d/%Y',)
+        self.fields['date'].initial = \
+            datetime.datetime.now().strftime('%m/%d/%Y')
         
     def save(self):
         created = not self.instance.id
