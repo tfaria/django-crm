@@ -130,7 +130,7 @@ class ProfileForm(forms.ModelForm):
         return self.cleaned_data['email']
     
     @transaction.commit_on_success
-    def save(self):
+    def save(self, commit=True):
         instance = super(ProfileForm, self).save(commit=False)
         qs = crm.Contact.objects.all()
         if not instance.pk:
@@ -145,8 +145,9 @@ class ProfileForm(forms.ModelForm):
             instance.description = ''
         instance.type = 'individual'
         instance.sort_name = slugify(instance.get_full_name())
-        instance.save()
-        self.save_m2m()
+        if commit:
+            instance.save()
+            self.save_m2m()
         return instance
 
 
@@ -180,6 +181,7 @@ class BusinessForm(forms.ModelForm):
         instance.type = 'business'
         if commit:
             instance.save()
+            self.save_m2m()
         return instance
 
 
