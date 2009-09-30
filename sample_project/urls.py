@@ -9,6 +9,7 @@ urlpatterns = patterns('',
     # crm and contactinfo URLs (required)
     (r'^crm/', include('crm.urls')),
     (r'^contactinfo/', include('contactinfo.urls')),
+    (r'^ajax/', include('ajax_select.urls')),
 
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs' 
     # to INSTALLED_APPS to enable admin documentation:

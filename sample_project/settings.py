@@ -11,8 +11,8 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DATABASE_ENGINE = ''           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = ''             # Or path to database file if using sqlite3.
+DATABASE_ENGINE = 'postgresql_psycopg2'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+DATABASE_NAME = 'django_crm_test'             # Or path to database file if using sqlite3.
 DATABASE_USER = ''             # Not used with sqlite3.
 DATABASE_PASSWORD = ''         # Not used with sqlite3.
 DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
@@ -103,3 +103,8 @@ INSTALLED_APPS = (
     'django_notify',
     'pagination',
 )
+
+AJAX_LOOKUP_CHANNELS = {
+    'contact' : ('crm.lookups', 'ContactLookup'),
+    'quick_search' : ('crm.lookups', 'QuickLookup'),
+}
