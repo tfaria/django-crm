@@ -391,7 +391,7 @@ def create_edit_interaction(request, person_id=None, interaction_id=None):
     
     if request.POST:
         form = crm_forms.InteractionForm(
-            request, 
+            request.POST, 
             instance=interaction,
             person=person,
             crm_user=request.contact,
@@ -760,7 +760,7 @@ def edit_project_relationship(request, business, project, user_id):
     rel = crm.ProjectRelationship.objects.get(project=project, contact=user)
     if request.POST:
         relationship_form = crm_forms.ProjectRelationshipForm(
-            request,
+            request.POST,
             instance=rel,
         )
         if relationship_form.is_valid():
