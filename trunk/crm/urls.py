@@ -29,13 +29,6 @@ urlpatterns = patterns('',
     url(r'^interaction/(?P<interaction_id>\d+)/edit/$', views.create_edit_interaction, name='edit_interaction'),
     url(r'^interaction/(?P<interaction_id>\d+)/remove/$', views.remove_interaction, name='remove_interaction'),
     
-    # TODO make these use flot (or something else) and re-enable
-#    url(r'^hours/$', views.hours, name='hours'),
-#    url(r'^graph/sum$',views.graph, kwargs={'type': 'developer_hours_sum', 'developer' : None }, name='graph_developer_hours_sum'),
-#    url(r'^graph/commit_hours/(?P<developer>\w+)$', views.graph, kwargs={'type': 'commit_hours'}, name='graph_commit_hours'),
-#    url(r'^graph/account/(?P<developer>\d+)$',views.graph, kwargs={'type': 'account'}, name='graph_account'),
-    
-    url(r'^person/search/$', views.quick_add_person, name='quick_add_person'),
     url(r'^person/list/$', views.list_people, name='list_people'),
     url(r'^person/create/$', views.create_edit_person, name='create_person'),
     url(r'^person/register/$', views.register_person, name='register_person'),

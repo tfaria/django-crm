@@ -3,26 +3,6 @@
 
 {% block title %}{{ project }}{% endblock %}
 
-{% block javascript %}
-	<script src="{{ MEDIA_URL }}js/mootools-1.2-more.js" type="text/javascript"></script>
-	<script type="text/javascript" defer="defer">
-	// <![CDATA[
-	window.addEvent('domready', function (event) {
-		var add_contact_slider = new Fx.Slide('add-contact');
-		add_contact_slider.hide();
-		
-		$('toggle-add-contact').addEvent('click', function (e) {
-			e.stop();
-			add_contact_slider.toggle();
-			if (!add_contact_slider.open) {
-				$('id_search').focus();
-			}
-		});
-	});
-	// ]]>
-	</script>
-{% endblock %}
-
 {% block content %}
 <h2>{{ project }}</h2>
 <ul class='header-actions-left'>
@@ -41,23 +21,16 @@
 			<a href='{% url view_person person_id=contact.id %}'>{{ contact.get_full_name }}</a>
 			<a title="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship business_id=project.business.id,project_id=project.id,user_id=contact.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
 			<a title='Remove {{ contact.get_full_name }}' href='{% url associate_contact business_id=project.business.id,project_id=project.id,user_id=contact.id,action="remove" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt='Remove {{ contact.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
-			{# {{ contact|project_relationship:project }} #}
 		</li>
 	{% endfor %}
 	{% endifnotequal %}
-		<li class='add'>
-			<div><a id='toggle-add-contact' href='#'>Add contact</a></div>
-			<form id="add-contact" action='{% url associate_contact business_id=project.business.id,project_id=project.id,action="add" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}' method="post" accept-charset="utf-8">
-				<div class="field-wrapper">
-					{{ add_contact_form.search.errors }}
-					<label for="id_search">Search:</label>
-					{{ add_contact_form.search|safe }}
-					<input type="submit" name="submit" value="Add" id="submit" />
-				</div>
-			</form>
-		</li>
-	
 	</ul>
+	<form id="add-contact" action='{% url associate_contact business_id=project.business.id,project_id=project.id,action="add" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}' method="post" accept-charset="utf-8">
+		<div class="field-wrapper">
+		    {{ add_contact_form }}
+			<input type="submit" name="submit" value="Add" id="submit" />
+		</div>
+	</form>
 </div>
 
 {% if project.notes %}

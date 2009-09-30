@@ -30,8 +30,6 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth import authenticate, login
 from django.core.mail import send_mass_mail, send_mail
 
-from caktus.django.forms import AutoCompleterForm
-
 from contactinfo.helpers import create_edit_location
 from contactinfo import models as contactinfo
 
@@ -87,54 +85,14 @@ def dashboard(request):
     
     return context
 
-### not a view
-def compare_by(fieldname):
-    def compare_two_dicts(a, b):
-        return cmp(a[fieldname], b[fieldname])
-    return compare_two_dicts
-
 
 @login_required
 def quick_search(request):
-    results = []
-    if request.POST:
-        if request.user.has_perm('crm.view_business'):
-            for business in crm.Contact.objects.filter(
-                type='business',
-                name__icontains=request.REQUEST['search'],
-            ):
-                results.append({
-                    'label': business.name,
-                    'href': reverse('view_business', kwargs={
-                        'business_id': business.id,
-                    }),
-                    'element_class': 'business',
-                })
-        if request.user.has_perm('crm.view_project'):
-            for project in crm.Project.objects.filter(
-                name__icontains=request.REQUEST['search'],
-            ).select_related():
-                results.append({
-                    'label': project.name,
-                    'href': reverse('view_project', kwargs={
-                        'business_id': project.business.id,
-                        'project_id': project.id,
-                    }),
-                    'element_class': 'project',
-                })
-        if request.user.has_perm('crm.view_profile'):
-            for profile in crm.Contact.objects.filter(type='individual').filter(
-                Q(first_name__icontains=request.REQUEST['search']) | 
-                Q(last_name__icontains=request.REQUEST['search']) |
-                Q(email__icontains=request.REQUEST['search'])
-            ).select_related():
-                results.append({
-                    'label': profile.get_full_name(),
-                    'href': reverse('view_person', kwargs={'person_id': profile.id}),
-                    'element_class': 'contact',
-                })
-                results.sort(compare_by('label'))
-    return HttpResponse(json.dumps(results[:10]), mimetype="text/json")
+    if request.GET:
+        form = crm_forms.QuickSearchForm(request.GET)
+        if form.is_valid():
+            return HttpResponseRedirect(form.save())
+    raise Http404
 
 
 @permission_required('crm.view_profile')
@@ -224,8 +182,8 @@ def create_edit_person(request, person_id=None):
     if person_id:
         profile = get_object_or_404(crm.Contact, pk=person_id)
         try:
-            location = profile.locations.get()
-        except contactinfo.Location.DoesNotExist:
+            location = profile.locations.all()[0]
+        except IndexError:
             location = None
     else:
         profile = None
@@ -341,40 +299,6 @@ def register_person(request):
     return context
 
 
-# TODO make these use flot (or something else) and re-enable
-# TODO remove links to Trac
-#@login_required
-#def graph(request, type, developer):
-#    # XXX remove import *s
-#    from trac_tickets.alchemy import *
-#    from trac_tickets.graphs import *
-#    from trac_tickets.models import TracConnection
-#    
-#    if type == 'developer_hours_sum':
-#        developer_usernames = developers()
-#        graph = graph_hours_sum(developer_usernames, 'PNG')
-#    if type == 'commit_hours':
-#        graph = graph_developer_hour_commits(developer)
-#    if type == 'account':
-#        account = Account.objects.get(id=developer)
-#        graph = graph_account_sum(account, 'PNG')
-#    
-#    return HttpResponse(graph, mimetype='image/png')
-#
-#
-#@login_required
-#@render_with('crm/hours.html')
-#def hours(request):
-#    context = {
-#        'graph_url' : reverse(
-#            'graph_commit_hours',
-#            kwargs={'developer': request.user.username,},
-#        ),
-#        'request' : request,
-#    }
-#    return context
-
-
 @permission_required('crm.add_interaction')
 @permission_required('crm.change_interaction')
 @render_with('crm/interaction/create_edit.html')
@@ -395,7 +319,6 @@ def create_edit_interaction(request, person_id=None, interaction_id=None):
             instance=interaction,
             person=person,
             crm_user=request.contact,
-            url=reverse('quick_add_person'),
         )
         if form.is_valid():
             form.save()
@@ -405,7 +328,6 @@ def create_edit_interaction(request, person_id=None, interaction_id=None):
             instance=interaction,
             person=person,
             crm_user=request.contact,
-            url=reverse('quick_add_person'),
         )
     context = {
         'form': form,
@@ -496,15 +418,7 @@ def list_businesses(request):
 @permission_required('crm.view_business')
 @render_with('crm/business/view.html')
 def view_business(request, business):
-    add_contact_form = AutoCompleterForm(
-        url=reverse('quick_add_person'),
-        options={
-            'delay': 100,
-            'markQuery': False,
-            'autoSubmit': True,
-            'forceSelect': True,
-        },
-    )
+    add_contact_form = crm_forms.AssociateContactForm()
     context = {
         'business': business,
         'add_contact_form': add_contact_form,
@@ -649,16 +563,7 @@ def list_projects(request):
 @transaction.commit_on_success
 @render_with('crm/business/project/view.html')
 def view_project(request, business, project):
-    add_contact_form = AutoCompleterForm(
-        url=reverse('quick_add_person'),
-        options={
-            'delay': 100,
-            'markQuery': False,
-            'autoSubmit': True,
-            'forceSelect': True,
-        },
-    )
-    
+    add_contact_form = crm_forms.AssociateContactForm()
     context = {
         'project': project,
         'add_contact_form': add_contact_form,
@@ -679,56 +584,28 @@ def view_project(request, business, project):
 
 @permission_required('crm.change_business')
 @permission_required('crm.change_project')
-def quick_add_person(request):
-    results = []
-    if request.POST:
-        for contact in crm.Contact.objects.filter(
-            Q(first_name__icontains=request.REQUEST['search']) | 
-            Q(last_name__icontains=request.REQUEST['search']) |
-            Q(email__icontains=request.REQUEST['search'])
-        ).select_related():
-            results.append({
-                'label': contact.get_full_name(),
-                'element_class': 'contact',
-                'element_id': unicode(contact.id),
-            })
-    return HttpResponse(json.dumps(results[:10]), mimetype="text/json")
-
-
-@permission_required('crm.change_business')
-@permission_required('crm.change_project')
 @transaction.commit_on_success
 def associate_contact(request, business, project=None, user_id=None, action=None):
     if action == 'add':
         if request.POST or 'associate' in request.REQUEST:
-            try:
-                user_id = request.REQUEST['search_selection']
-            except (ValueError, KeyError):
-                request.notifications.add(
-                    'Your search for "%s" did not match any contacts. You\
-                    may create a new contact here.' % request.POST['search'])
-                return HttpResponseRedirect('%s?associate=%s' % \
-                    (reverse('create_person'), request.get_full_path()))
-            
-            if user_id:
-                try:
-                    contact = crm.Contact.objects.get(pk=user_id)
-                    if project:
-                        crm.ProjectRelationship.objects.get_or_create(
-                            contact=contact,
-                            project=project,
-                        )
-                    else:
-                        crm.ContactRelationship.objects.get_or_create(
-                            from_contact=contact,
-                            to_contact=business,
-                        )
-                        crm.ContactRelationship.objects.get_or_create(
-                            to_contact=contact,
-                            from_contact=business,
-                        )
-                except User.DoesNotExist:
-                    user = None
+            form = crm_forms.AssociateContactForm(request.POST)
+            if form.is_valid():
+                contact = form.save()
+                if project:
+                    crm.ProjectRelationship.objects.get_or_create(
+                        contact=contact,
+                        project=project,
+                    )
+                else:
+                    crm.ContactRelationship.objects.get_or_create(
+                        from_contact=contact,
+                        to_contact=business,
+                    )
+                    crm.ContactRelationship.objects.get_or_create(
+                        to_contact=contact,
+                        from_contact=business,
+                    )
+
     else:
         try:
             contact = crm.Contact.objects.get(pk=user_id)
