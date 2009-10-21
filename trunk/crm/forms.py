@@ -121,6 +121,8 @@ class ProfileForm(forms.ModelForm):
         super(ProfileForm, self).__init__(*args, **kwargs)
         if not request.user.has_perm('crm.change_contact'):
             self.fields.pop('notes')
+        self.fields['first_name'].required = True
+        self.fields['last_name'].required = True
     
     def clean_email(self):
         if self.cleaned_data['email'] != '':
@@ -148,7 +150,7 @@ class ProfileForm(forms.ModelForm):
         if instance.description is None:
             instance.description = ''
         instance.type = 'individual'
-        instance.sort_name = slugify(instance.get_full_name())
+        instance.sort_name = slugify("%s-%s" % (instance.last_name, instance.first_name))
         if commit:
             instance.save()
             self.save_m2m()
