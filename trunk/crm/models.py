@@ -240,7 +240,6 @@ class Interaction(models.Model):
     date = models.DateTimeField()
     type = models.CharField(max_length=15, choices=INTERACTION_TYPES)
     completed = models.BooleanField(default=False)
-    # project = models.ForeignKey(Project, null=True, blank=True)
     memo = models.TextField(blank=True)
     cdr_id = models.TextField(null=True)
     

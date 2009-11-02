@@ -274,14 +274,14 @@ class UserModelChoiceField(forms.ModelMultipleChoiceField):
 class InteractionForm(forms.ModelForm):
     class Meta:
         model = crm.Interaction
-        fields = ('date', 'type', 'completed', 'project', 'contacts', 'memo',)
+        fields = ('date', 'type', 'completed', 'contacts', 'memo',)
     
     def __init__(self, *args, **kwargs):    
         self.person = kwargs.pop('person')
         self.crm_user = kwargs.pop('crm_user')
         super(InteractionForm, self).__init__(*args, **kwargs)
         self.fields.keyOrder = \
-            ('date', 'type', 'completed', 'contacts', 'project', 'memo',)
+            ('date', 'type', 'completed', 'contacts', 'memo',)
         
         self.fields['contacts'] = AutoCompleteSelectMultipleField('contact')
         
@@ -296,21 +296,21 @@ class InteractionForm(forms.ModelForm):
             self.fields['contacts'].widget.initial_choices = \
                 [unicode(choice) for choice in initial_choices]
         
-        if not self.instance.id and self.person:
-            projects = crm.Project.objects.filter(contacts=self.person)
-        elif self.instance.id:
-            # show only client projects
-            client_contacts = self.instance.contacts.filter(
-                contacts__type='business',
-                contacts__business_types__name__iexact='client',
-            )
-            projects = crm.Project.objects.filter(
-                contacts__in=client_contacts
-            ).distinct()
-        else:
-            projects = crm.Project.objects.none()
-        
-        self.fields['project'].queryset = projects
+        # if not self.instance.id and self.person:
+        #     projects = crm.Project.objects.filter(contacts=self.person)
+        # elif self.instance.id:
+        #     # show only client projects
+        #     client_contacts = self.instance.contacts.filter(
+        #         contacts__type='business',
+        #         contacts__business_types__name__iexact='client',
+        #     )
+        #     projects = crm.Project.objects.filter(
+        #         contacts__in=client_contacts
+        #     ).distinct()
+        # else:
+        #     projects = crm.Project.objects.none()
+        # 
+        # self.fields['project'].queryset = projects
         
         self.fields['date'].widget = DateInput(date_format='%m/%d/%Y')
         self.fields['date'].input_formats = ('%m/%d/%Y',)

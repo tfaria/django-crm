@@ -90,4 +90,6 @@ COMMIT;
 
 BEGIN;
 ALTER TABLE timepiece_project ADD COLUMN "billing_period_id" integer;
+INSERT INTO timepiece_project_interactions (project_id, interaction_id) SELECT project_id, id FROM crm_interaction WHERE project_id IS NOT NULL;
+ALTER TABLE crm_interaction DROP COLUMN project_id;
 COMMIT;
