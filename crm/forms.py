@@ -121,8 +121,6 @@ class ProfileForm(forms.ModelForm):
         super(ProfileForm, self).__init__(*args, **kwargs)
         if not request.user.has_perm('crm.change_contact'):
             self.fields.pop('notes')
-        self.fields['first_name'].required = True
-        self.fields['last_name'].required = True
     
     def clean_email(self):
         if self.cleaned_data['email'] != '':
@@ -150,7 +148,7 @@ class ProfileForm(forms.ModelForm):
         if instance.description is None:
             instance.description = ''
         instance.type = 'individual'
-        instance.sort_name = slugify("%s-%s" % (instance.last_name, instance.first_name))
+        instance.sort_name = slugify(instance.get_full_name())
         if commit:
             instance.save()
             self.save_m2m()
@@ -244,11 +242,16 @@ class QuickSearchForm(forms.Form):
     
     def clean_quick_search(self):
         item = self.cleaned_data['quick_search']
-        if isinstance(item, crm.Project):
-            return reverse('view_project', kwargs={
-                'business_id': item.business.id,
-                'project_id': item.id,
-            })
+        try:
+            from timepiece import models as timepiece
+        except ImportError:
+            timepiece = None
+        if timepiece:
+            if isinstance(item, timepiece.Project):
+                return reverse('view_project', kwargs={
+                    'business_id': item.business.id,
+                    'project_id': item.id,
+                })
         elif isinstance(item, crm.Contact) and item.type == 'individual':
             return reverse('view_person', kwargs={
                 'person_id': item.id,
@@ -350,52 +353,6 @@ class ContactRelationshipForm(forms.ModelForm):
         mirror.types = instance.types.all()
         mirror.save()
         return instance
-
-
-class ProjectForm(forms.ModelForm):
-    class Meta:
-        model = crm.Project
-        fields = (
-            'name',
-            'business',
-            'trac_environment',
-            'point_person',
-            'type',
-            'status',
-            'description',
-        )
-
-    def __init__(self, *args, **kwargs):
-        self.business = kwargs.pop('business')
-        super(ProjectForm, self).__init__(*args, **kwargs)
-        
-        if self.business:
-            self.fields.pop('business')
-        else:
-            self.fields['business'].queryset = crm.Contact.objects.filter(
-                type='business',
-                business_types__name='client',
-            )
-    
-    def save(self):
-        instance = super(ProjectForm, self).save(commit=False)
-        if self.business:
-            instance.business = self.business
-        instance.save()
-        return instance
-
-
-class ProjectRelationshipForm(forms.ModelForm):
-    class Meta:
-        model = crm.ProjectRelationship
-        fields = ('types',)
-    
-    def __init__(self, *args, **kwargs):
-        super(ProjectRelationshipForm, self).__init__(*args, **kwargs)
-        self.fields['types'].widget = forms.CheckboxSelectMultiple(
-            choices=self.fields['types'].choices
-        )
-        self.fields['types'].help_text = ''
 
 
 class EmailContactForm(forms.Form):

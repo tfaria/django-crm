@@ -3,6 +3,11 @@ from django.core.urlresolvers import reverse
 
 from crm import models as crm
 
+try:
+    from timepiece import models as timepiece
+except ImportError:
+    timepiece = None
+
 
 class ContactLookup(object):
 
@@ -65,12 +70,13 @@ class QuickLookup(object):
             results.append(
                 SearchResult(contact.pk, contact.type, name)
             )
-        for project in crm.Project.objects.filter(
-            name__icontains=q,
-        ).select_related():
-            results.append(
-                SearchResult(project.pk, 'project', project.name)
-            )
+        if timepiece:
+            for project in timepiece.Project.objects.filter(
+                name__icontains=q,
+            ).select_related():
+                results.append(
+                    SearchResult(project.pk, 'project', project.name)
+                )
         results.sort(lambda a,b: cmp(a.name, b.name))
         return results
         
@@ -89,8 +95,8 @@ class QuickLookup(object):
         results = []
         for id in ids:
             type, pk = id.split('-')
-            if type == 'project':
-                results.append(crm.Project.objects.get(pk=pk))
+            if timepiece and type == 'project':
+                results.append(timepiece.Project.objects.get(pk=pk))
             else:
                 results.append(crm.Contact.objects.get(pk=pk))
         return results

@@ -166,6 +166,8 @@ class Contact(models.Model):
     class Meta:
         permissions = (
             ("access_xmlrpc", "Can access minibooks XML-RPC service"),
+            ("view_profile", "Can view contacts"),
+            ("view_business", "Can view businesses"),
         )
     
     def __unicode__(self):
@@ -224,69 +226,6 @@ class RelationshipType(models.Model):
         return self.name
 
 
-class Project(models.Model):
-    PROJECT_STATUSES = (
-        ('requested', 'Requested'),
-        ('accepted', 'Accepted'),
-        ('finished', 'Finished'),
-    )
-    
-    PROJECT_TYPES = (
-        ('consultation', 'Consultation'),
-        ('software', 'Software Project'),
-    )
-    
-    name = models.CharField(max_length = 255)
-    trac_environment = models.CharField(max_length = 255, blank=True, null=True)
-    business = models.ForeignKey(
-        Contact, 
-        related_name='business_projects', 
-        limit_choices_to={'type': 'business'},
-    )
-    point_person = models.ForeignKey(User, limit_choices_to= {'is_staff':True})
-    contacts = models.ManyToManyField(
-        Contact,
-        related_name='contact_projects',
-        through='ProjectRelationship',
-    )
-    
-    type = models.CharField(max_length=15, choices=PROJECT_TYPES)
-    status = models.CharField(max_length=15, choices=PROJECT_STATUSES)
-    description = models.TextField()
-    
-    class Meta:
-        ordering = ('name', 'status', 'type',)
-        permissions = (
-            ('view_project', 'Can view project'),
-            ('email_project_report', 'Can email project report'),
-        )
-    
-    def __unicode__(self):
-        return self.name
-    
-    def trac_url(self):
-        return settings.TRAC_URL % self.trac_environment
-
-
-class ProjectRelationship(models.Model):
-    types = models.ManyToManyField(
-        RelationshipType,
-        related_name='project_relationships',
-        blank=True,
-    )
-    contact = models.ForeignKey(Contact, limit_choices_to={'type': 'individual'})
-    project = models.ForeignKey(Project)
-    
-    class Meta:
-        unique_together = ('contact', 'project')
-    
-    def __unicode__(self):
-        return "%s's relationship to %s" % (
-            self.project.name,
-            self.user.get_full_name(),
-        )
-
-
 class Interaction(models.Model):
     """ Communication log """
     
@@ -301,7 +240,7 @@ class Interaction(models.Model):
     date = models.DateTimeField()
     type = models.CharField(max_length=15, choices=INTERACTION_TYPES)
     completed = models.BooleanField(default=False)
-    project = models.ForeignKey(Project, null=True, blank=True)
+    # project = models.ForeignKey(Project, null=True, blank=True)
     memo = models.TextField(blank=True)
     cdr_id = models.TextField(null=True)
     
