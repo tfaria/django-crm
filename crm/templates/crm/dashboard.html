@@ -13,22 +13,31 @@
 			<li><a href='{% url list_projects %}'>View All</a></li>
 		</ul>
 	{% endif %}
-		<ul class='projects person'>
+		<ul>
 		{% ifequal projects.count 0 %}
 			You don't have any projects yet.
 		{% else %}
-			{% for project in projects %}
-				<li>
-				{% if perms.timepiece.view_project %}
-					<a href='{% url view_project business_id=project.business.id,project_id=project.id %}'>{{ project.name }}</a>
-				{% else %}
-					{{ project.name }}
-				{% endif %}
-					{% if project.trac_environment %}
-						<span class='trac-options'>(<a href='{{ project.trac_url}}roadmap'>roadmap</a>,  <a href='{{ project.trac_url }}newticket'>create ticket</a>)</span>
-					{% endif %}
-				</li>
-			{% endfor %}
+            {% regroup projects by status as status_list %}
+            
+            {% for status in status_list %}
+                <li>
+                    {{ status.grouper|capfirst }}
+                    <ul class='projects person'>
+    			{% for project in status.list %}
+    				<li>
+    				{% if perms.timepiece.view_project %}
+    					<a href='{% url view_project business_id=project.business.id,project_id=project.id %}'>{{ project.name }}</a>
+    				{% else %}
+    					{{ project.name }}
+    				{% endif %}
+    					{% if project.trac_environment %}
+    						<span class='trac-options'>(<a href='{{ project.trac_url}}roadmap'>roadmap</a>,  <a href='{{ project.trac_url }}newticket'>create ticket</a>)</span>
+    					{% endif %}
+    				</li>
+    			{% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
 		{% endifequal %}
 		</ul>
 	</div>

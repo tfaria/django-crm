@@ -58,9 +58,15 @@ def dashboard(request):
             'project__business',
         ).filter(completed=True)[:6]
 
-        projects = request.contact.contact_projects.order_by(
-            'name',
-        ).select_related('business')
+        if hasattr(request.contact, 'contact_projects'):
+            projects = request.contact.contact_projects.order_by(
+                'status',
+                'name',
+            ).select_related(
+                'business',
+            ).exclude(status='closed')
+        else:
+            projects = []
     else:
         upcoming_interactions = []
         recent_interactions = []
