@@ -535,13 +535,17 @@ def edit_business_relationship(request, business, user_id):
 @permission_required('crm.change_project')
 @transaction.commit_on_success
 def associate_contact(request, business, project=None, user_id=None, action=None):
+    try:
+        from timepiece import models as timepiece
+    except ImportError:
+        timpiece = None
     if action == 'add':
         if request.POST or 'associate' in request.REQUEST:
             form = crm_forms.AssociateContactForm(request.POST)
             if form.is_valid():
                 contact = form.save()
-                if project:
-                    crm.ProjectRelationship.objects.get_or_create(
+                if project and timepiece:
+                    timepiece.ProjectRelationship.objects.get_or_create(
                         contact=contact,
                         project=project,
                     )
@@ -554,12 +558,11 @@ def associate_contact(request, business, project=None, user_id=None, action=None
                         to_contact=contact,
                         from_contact=business,
                     )
-
     else:
         try:
             contact = crm.Contact.objects.get(pk=user_id)
-            if project:
-                crm.ProjectRelationship.objects.get(
+            if project and timepiece:
+                timepiece.ProjectRelationship.objects.get(
                     contact=contact,
                     project=project,
                 ).delete()
@@ -572,9 +575,8 @@ def associate_contact(request, business, project=None, user_id=None, action=None
                     to_contact=contact,
                     from_contact=business,
                 ).delete()
-        except crm.Contact.DoesNotExist, crm.ProjectRelationship.DoesNotExist:
+        except crm.Contact.DoesNotExist, timepiece.ProjectRelationship.DoesNotExist:
             user = None
-    
     return HttpResponseRedirect(request.REQUEST['next'])
 
 @render_with('crm/person/address_book.xml')
