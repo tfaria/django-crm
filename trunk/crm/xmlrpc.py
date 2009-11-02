@@ -23,6 +23,7 @@ from django.contrib import auth
 from django.forms.fields import email_re
 from django.contrib.auth.models import User
 
+from timepiece import models as timepiece
 from crm import models as crm
 from crm.decorators import has_perm_or_basicauth
 
@@ -77,11 +78,11 @@ def trac_groups_for_user(environment, username):
     groups = []
     user = _get_user(username)
     try:
-        project = crm.Project.objects.get(
+        project = timepiece.Project.objects.get(
             trac_environment=environment,
             contacts=user,
         )
-    except crm.Project.DoesNotExist:
+    except timepiece.Project.DoesNotExist:
         project = None
     if user and project:
         groups = crm.ProjectRelationshipType.objects.filter(
