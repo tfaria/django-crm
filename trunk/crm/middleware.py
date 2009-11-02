@@ -17,6 +17,11 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from crm import models as crm
 
+try:
+    from timepiece import models as timepiece
+except ImportError:
+    timepiece = None
+
 class StandardViewKwargsMiddleware(object):
     """
     """
@@ -48,8 +53,8 @@ class StandardViewKwargsMiddleware(object):
                 except crm.Contact.DoesNotExist:
                     raise Http404
             view_kwargs['business'] = request.business
-            
-        if 'project_id' in view_kwargs:
+        
+        if 'project_id' in view_kwargs and timepiece:
             args = {
                 'pk': view_kwargs.pop('project_id'),
             }
@@ -57,7 +62,7 @@ class StandardViewKwargsMiddleware(object):
                 args['business'] = request.business
             if args['pk']:
                 request.project = get_object_or_404(
-                    crm.Project, 
+                    timepiece.Project, 
                     **args
                 )
             view_kwargs['project'] = request.project

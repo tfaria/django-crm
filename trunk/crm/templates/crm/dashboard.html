@@ -19,7 +19,7 @@
 		{% else %}
 			{% for project in projects %}
 				<li>
-				{% if perms.crm.view_project %}
+				{% if perms.timepiece.view_project %}
 					<a href='{% url view_project business_id=project.business.id,project_id=project.id %}'>{{ project.name }}</a>
 				{% else %}
 					{{ project.name }}

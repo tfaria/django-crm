@@ -531,57 +531,6 @@ def edit_business_relationship(request, business, user_id):
     return context
 
 
-@permission_required('crm.view_project')
-@render_with('crm/business/project/list.html')
-def list_projects(request):
-    form = crm_forms.SearchForm(request.GET)
-    if form.is_valid() and 'search' in request.GET:
-        search = form.cleaned_data['search']
-        projects = crm.Project.objects.filter(
-            Q(name__icontains=search) |
-            Q(description__icontains=search)
-        )
-        if projects.count() == 1:
-            url_kwargs = {
-                'business_id': projects[0].business.id,
-                'project_id': projects[0].id,
-            }
-            return HttpResponseRedirect(
-                reverse('view_project', kwargs=url_kwargs)
-            )
-    else:
-        projects = crm.Project.objects.all()
-    
-    context = {
-        'form': form,
-        'projects': projects.select_related('business'),
-    }
-    return context
-
-
-@permission_required('crm.view_project')
-@transaction.commit_on_success
-@render_with('crm/business/project/view.html')
-def view_project(request, business, project):
-    add_contact_form = crm_forms.AssociateContactForm()
-    context = {
-        'project': project,
-        'add_contact_form': add_contact_form,
-    }
-    try:
-        from ledger.models import Exchange
-        context['exchanges'] = Exchange.objects.filter(
-            business=business,
-            transactions__project=project,
-        ).distinct().select_related().order_by('type', '-date', '-id',)
-        context['show_delivered_column'] = \
-            context['exchanges'].filter(type__deliverable=True).count() > 0
-    except ImportError:
-        pass
-    
-    return context
-
-
 @permission_required('crm.change_business')
 @permission_required('crm.change_project')
 @transaction.commit_on_success
@@ -627,65 +576,6 @@ def associate_contact(request, business, project=None, user_id=None, action=None
             user = None
     
     return HttpResponseRedirect(request.REQUEST['next'])
-
-
-@permission_required('crm.change_project')
-@transaction.commit_on_success
-@render_with('crm/business/project/relationship.html')
-def edit_project_relationship(request, business, project, user_id):
-    user = get_object_or_404(crm.Contact, pk=user_id, projects=project)
-    rel = crm.ProjectRelationship.objects.get(project=project, contact=user)
-    if request.POST:
-        relationship_form = crm_forms.ProjectRelationshipForm(
-            request.POST,
-            instance=rel,
-        )
-        if relationship_form.is_valid():
-            rel = relationship_form.save()
-            return HttpResponseRedirect(request.REQUEST['next'])
-    else:
-        relationship_form = crm_forms.ProjectRelationshipForm(instance=rel)
-    
-    context = {
-        'user': user,
-        'project': project,
-        'relationship_form': relationship_form,
-    }
-    return context
-
-
-@permission_required('crm.add_project')
-@permission_required('crm.change_project')
-@render_with('crm/business/project/create_edit.html')
-def create_edit_project(request, business=None, project=None):
-    if request.POST:
-        project_form = crm_forms.ProjectForm(
-            request.POST,
-            business=business,
-            instance=project,
-        )
-        if project_form.is_valid():
-            project = project_form.save()
-            url_kwargs = {
-                'business_id': project.business.id,
-                'project_id': project.id,
-            }
-            return HttpResponseRedirect(
-                reverse('view_project', kwargs=url_kwargs)
-            )
-    else:
-        project_form = crm_forms.ProjectForm(
-            business=business, 
-            instance=project
-        )
-    
-    context = {
-        'business': business,
-        'project': project,
-        'project_form': project_form,
-    }
-    return context
-
 
 @render_with('crm/person/address_book.xml')
 def address_book(request, file_name):

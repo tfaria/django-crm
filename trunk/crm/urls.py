@@ -65,32 +65,10 @@ urlpatterns = patterns('',
     ),
     
     # projects
-    url(r'^project/list/$', views.list_projects, name='list_projects'),
-    url(
-        r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/$',
-        views.view_project,
-        name='view_project',
-    ),
-    url(
-        r'^(?:business/(?P<business_id>\d+)/)?project/create/$',
-        views.create_edit_project,
-        name='create_project',
-    ),
-    url(
-        r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/edit/$',
-        views.create_edit_project,
-        name='edit_project',
-    ),
-    
     url(
         r'^business/(?P<business_id>\d+)/(?:project/(?P<project_id>\d+)/)?(?:contact/(?P<user_id>\w+)/)?(?P<action>remove|add)/$',
         views.associate_contact,
         name='associate_contact',
-    ),
-    url(
-        r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/contact/(?P<user_id>\d+)/edit/$',
-        views.edit_project_relationship,
-        name='edit_project_relationship',
     ),
     
     url(r'^book/(?P<file_name>[\w.]+)$', views.address_book, name='address_book'),
