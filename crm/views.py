@@ -60,11 +60,16 @@ def dashboard(request):
 
         if hasattr(request.contact, 'contact_projects'):
             projects = request.contact.contact_projects.order_by(
-                'status',
+                'status__sort_order',
+                'status__label',
+                'type__sort_order',
+                'type__label',
                 'name',
             ).select_related(
                 'business',
-            ).exclude(status__in=('closed', 'complete'))
+                'status',
+                'type',
+            ).exclude(status__label__in=('Closed', 'Complete'))
         else:
             projects = []
     else:

@@ -18,23 +18,30 @@
 			You don't have any projects yet.
 		{% else %}
             {% regroup projects by status as status_list %}
-            
             {% for status in status_list %}
                 <li>
-                    {{ status.grouper|capfirst }}
-                    <ul class='projects person'>
-    			{% for project in status.list %}
-    				<li>
-    				{% if perms.timepiece.view_project %}
-    					<a href='{% url view_project business_id=project.business.id,project_id=project.id %}'>{{ project.name }}</a>
-    				{% else %}
-    					{{ project.name }}
-    				{% endif %}
-    					{% if project.trac_environment %}
-    						<span class='trac-options'>(<a href='{{ project.trac_url}}roadmap'>roadmap</a>,  <a href='{{ project.trac_url }}newticket'>create ticket</a>)</span>
-    					{% endif %}
-    				</li>
-    			{% endfor %}
+                    {{ status.grouper.label}}
+                    <ul>
+                    {% regroup status.list by type as type_list %}
+                    {% for type in type_list %}
+                        <li>
+                            {{ type.grouper.label }}s
+                            <ul class='projects person'>
+                            {% for project in type.list %}
+                                <li>
+                                {% if perms.timepiece.view_project %}
+                                    <a href='{% url view_project business_id=project.business.id,project_id=project.id %}'>{{ project.name }}</a>
+                                {% else %}
+                                    {{ project.name }}
+                                {% endif %}
+                                {% if project.trac_environment %}
+                                    <span class='trac-options'>(<a href='{{ project.trac_url}}roadmap'>roadmap</a>,  <a href='{{ project.trac_url }}newticket'>create ticket</a>)</span>
+                                {% endif %}
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        </li>
+                    {% endfor %}
                     </ul>
                 </li>
             {% endfor %}
