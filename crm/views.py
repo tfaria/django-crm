@@ -64,7 +64,7 @@ def dashboard(request):
                 'name',
             ).select_related(
                 'business',
-            ).exclude(status='closed')
+            ).exclude(status__in=('closed', 'completed'))
         else:
             projects = []
     else:
