@@ -101,7 +101,9 @@ class PersonForm(forms.ModelForm):
                 email_dict['extra_context'] = {}
             email_dict['extra_context']['user_is_new'] = created
             if created:
-                password = reset_user_password(user)
+                password = User.objects.make_random_password(length=8)
+                user.set_password(password)
+                user.save()
                 email_dict['extra_context']['password'] = password
             send_user_email(request, user, email_dict)
         return user, created

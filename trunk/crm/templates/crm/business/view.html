@@ -44,30 +44,32 @@
 </div>
 
 <table class='vertical' id='business-profile'>
-{% for location in business.locations.all %}
-
-{% for address in location.addresses.all %}
-	<tr>
-		<th>{{ location.type|capfirst }} Address:</th>
-		<td>{{ address }}</td>
-	</tr>
-{% endfor %}
-
-{% for phone in location.phones.all %}
-	<tr>
-		<th>{{ location.type|capfirst }} {{ phone.type|capfirst }}:</th>
-		<td><a href='sip://1-{{ phone }}'>{{ phone }}</a></td>
-	</tr>
-{% endfor %}
-{% endfor %}
-    <tr>
-        <th>Description:</th>
-        <td>{{ business.description|textile }}</td>
-    </tr>
-	<tr>
-		<th>Notes:</th>
-		<td>{{ business.notes|textile }}</td>
-	</tr>
+    {% for location in business.locations.all %}
+        {% for address in location.addresses.all %}
+            <tr>
+                <th>{{ location.type|capfirst }} Address:</th>
+                <td>{{ address }}</td>
+            </tr>
+        {% endfor %}
+        {% for phone in location.phones.all %}
+            <tr>
+                <th>{{ location.type|capfirst }} {{ phone.type|capfirst }}:</th>
+                <td><a href='sip://1-{{ phone }}'>{{ phone }}</a></td>
+            </tr>
+        {% endfor %}
+    {% endfor %}
+    {% if business.description %}
+        <tr>
+            <th>Description:</th>
+            <td>{{ business.description|textile }}</td>
+        </tr>
+    {% endif %}
+    {% if business.notes %}
+        <tr>
+            <th>Notes:</th>
+            <td>{{ business.notes|textile }}</td>
+        </tr>
+    {% endif %}
 </table>
 
 {% ifequal business.business_projects.count 0 %}
