@@ -248,12 +248,11 @@ class QuickSearchForm(forms.Form):
             from timepiece import models as timepiece
         except ImportError:
             timepiece = None
-        if timepiece:
-            if isinstance(item, timepiece.Project):
-                return reverse('view_project', kwargs={
-                    'business_id': item.business.id,
-                    'project_id': item.id,
-                })
+        if timepiece and isinstance(item, timepiece.Project):
+            return reverse('view_project', kwargs={
+                'business_id': item.business.id,
+                'project_id': item.id,
+            })
         elif isinstance(item, crm.Contact) and item.type == 'individual':
             return reverse('view_person', kwargs={
                 'person_id': item.id,
