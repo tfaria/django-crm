@@ -139,7 +139,7 @@ class ProfileForm(forms.ModelForm):
     def save(self, commit=True):
         instance = super(ProfileForm, self).save(commit=False)
         qs = crm.Contact.objects.all()
-        if not instance.pk:
+        if instance.pk:
             qs = qs.exclude(pk=instance.pk)
         instance.slug = slugify_uniquely(instance.get_full_name(), qs)
         if instance.user:
@@ -150,7 +150,8 @@ class ProfileForm(forms.ModelForm):
         if instance.description is None:
             instance.description = ''
         instance.type = 'individual'
-        instance.sort_name = slugify(instance.get_full_name())
+        sort_name = "%s %s" % (instance.last_name, instance.first_name)
+        instance.sort_name = slugify(sort_name)
         if commit:
             instance.save()
             self.save_m2m()

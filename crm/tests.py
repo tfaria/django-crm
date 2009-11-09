@@ -115,6 +115,46 @@ class ContactTestCase(TestCase):
             postal_code=27516,
         )
         self.phone = self.location.phones.create(number='999-999-9999')
+        self.post = {
+            u'first_name': [u'John'],
+            u'last_name': [u'Doe'],
+            u'type': [u'2'],
+            u'email': [u'john@doe.com'],
+            u'submit': [u'Update \u2192'],
+            u'picture': [u''],
+            u'notes': [u''],
+            u'country': [u'US'],
+            u'initial-country': [u'US'],
+            u'initial-type': [u'2'],
+            u'location_phones-INITIAL_FORMS': [u'1'],
+            u'location_addresses-INITIAL_FORMS': [u'1'],
+            u'location_phones-TOTAL_FORMS': [u'3'],
+            u'location_phones-0-id': self.phone.id,
+            u'location_phones-0-type': [u'landline'],
+            u'location_phones-0-location': self.location.id,
+            u'location_phones-0-number': self.phone.number,
+            u'location_addresses-0-street': self.address.street,
+            u'location_addresses-0-postal_code': self.address.postal_code,
+            u'location_addresses-0-location': self.location.id,
+            u'location_addresses-0-id': self.address.id,
+            u'location_addresses-0-city': self.address.city,
+            u'location_addresses-0-state_province': self.address.state_province,
+            u'location_phones-1-id': [u''],
+            u'location_addresses-1-postal_code': [u''],
+            u'location_addresses-1-id': [u''],
+            u'location_phones-2-location': self.location.id,
+            u'location_phones-2-type': [u'landline'],
+            u'location_phones-1-type': [u'landline'],
+            u'location_addresses-1-state_province': [u''],
+            u'location_addresses-TOTAL_FORMS': [u'2'],
+            u'location_phones-2-id': [u''],
+            u'location_addresses-1-street': [u''],
+            u'location_addresses-1-city': [u''],
+            u'location_addresses-1-location': self.location.id,
+            u'location_phones-1-number': [u''],
+            u'location_phones-1-location': self.location.id,
+            u'location_phones-2-number': [u'']
+        }
     
     def testEmailForm(self):
         url = reverse('email_contact', args=[self.contact.slug])
@@ -239,6 +279,18 @@ class ContactTestCase(TestCase):
             data
         )
         self.assertEqual(len(mail.outbox), 1)
+    
+    def testContactSlugs(self):
+        self.client.login(username='admin', password='abc123')
+        response = self.client.post(
+            reverse('edit_person', args=[self.contact.pk]),
+            self.post,
+            follow=True,
+        )
+        self.assertEquals(response.status_code, 200)
+        contact = crm.Contact.objects.get(user=self.contact_user)
+        self.assertEqual(contact.slug, self.contact.slug)
+        self.assertEqual(contact.sort_name, self.contact.sort_name)
 
 
 class LoginRegistrationTestCase(TestCase):
