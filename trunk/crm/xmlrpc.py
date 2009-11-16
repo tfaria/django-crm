@@ -23,9 +23,13 @@ from django.contrib import auth
 from django.forms.fields import email_re
 from django.contrib.auth.models import User
 
-from timepiece import models as timepiece
 from crm import models as crm
 from crm.decorators import has_perm_or_basicauth
+
+try:
+    from timepiece import models as timepiece
+except ImportError:
+    timepiece = None
 
 try:
     # Python 2.5
@@ -75,18 +79,20 @@ dispatcher.register_function(authenticate, 'authenticate')
 
 
 def trac_groups_for_user(environment, username):
+    if not timepiece:
+        return []
     groups = []
     user = _get_user(username)
     try:
         project = timepiece.Project.objects.get(
             trac_environment=environment,
-            contacts=user,
+            contacts__user=user,
         )
     except timepiece.Project.DoesNotExist:
         project = None
     if user and project:
-        groups = crm.ProjectRelationshipType.objects.filter(
-            project_relationships__user=user,
+        groups = crm.RelationshipType.objects.filter(
+            project_relationships__contact__user=user,
             project_relationships__project=project,
         ).values_list('slug', flat=True)
         # snip 'trac-' off the front of the slug
