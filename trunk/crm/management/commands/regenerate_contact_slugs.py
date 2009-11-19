@@ -1,6 +1,7 @@
 from django.core.management.base import NoArgsCommand
 from django.db import transaction
 from django.contrib.auth.models import User
+from django.template.defaultfilters import slugify
 
 from crm import models as crm
 from crm.models import slugify_uniquely

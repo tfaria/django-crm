@@ -58,7 +58,13 @@ def slugify_uniquely(s, queryset=None, field='slug'):
 
 
 class Contact(models.Model):
-    user = models.ForeignKey(User, null=True, blank=True, unique=True)
+    user = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        unique=True,
+        related_name='contacts',
+    )
     business_types = models.ManyToManyField(
         'BusinessType',
         related_name='businesses',
