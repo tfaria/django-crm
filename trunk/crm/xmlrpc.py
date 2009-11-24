@@ -59,18 +59,18 @@ def rpc_handler(request):
     return response
 
 
-def _get_user(username):
+def _get_contact(username):
     if email_re.search(username):
         try:
-            user = User.objects.get(email=username)
-        except User.DoesNotExist:
-            user = None
+            contact = crm.Contact.objects.get(user__email=username)
+        except crm.Contact.DoesNotExist:
+            contact = None
     else:
         try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            user = None
-    return user
+            contact = crm.Contact.objects.get(user__username=username)
+        except crm.Contact.DoesNotExist:
+            contact = None
+    return contact
 
 
 def authenticate(username, password):
@@ -78,33 +78,16 @@ def authenticate(username, password):
 dispatcher.register_function(authenticate, 'authenticate')
 
 
-def trac_groups_for_user(environment, username):
-    if not timepiece:
-        return []
+def project_relationships(project_trac_env, username):
     groups = []
-    user = _get_user(username)
-    try:
-        project = timepiece.Project.objects.get(
-            trac_environment=environment,
-            contacts__user=user,
-        )
-    except timepiece.Project.DoesNotExist:
-        project = None
-    if user and project:
+    contact = _get_contact(username)
+    if contact:
         groups = crm.RelationshipType.objects.filter(
-            project_relationships__contact__user=user,
-            project_relationships__project=project,
+            project_relationships__contact=contact,
+            project_relationships__project__trac_environment=project_trac_env,
         ).values_list('slug', flat=True)
-        # snip 'trac-' off the front of the slug
-        groups = [str(group[5:]) for group in groups]
-    if user:
-        global_groups = user.groups.filter(
-            name__istartswith='trac-',
-        ).values_list('name', flat=True)
-        global_groups = [str(group[5:]) for group in global_groups]
-        groups.extend(global_groups)
-    return list(set(groups))
-dispatcher.register_function(trac_groups_for_user, 'trac_groups_for_user')
+    return list(groups)
+dispatcher.register_function(project_relationships, 'project_relationships')
 
 
 def callerid(number):
