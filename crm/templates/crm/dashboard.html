@@ -35,8 +35,9 @@
                                     {{ project.name }}
                                 {% endif %}
                                 {% if project.trac_environment %}
-                                    <span class='trac-options'>(<a href='{{ project.trac_url}}roadmap'>roadmap</a>,  <a href='{{ project.trac_url }}newticket'>create ticket</a>)</span>
+                                    <span class='trac-options'>({% if project.svn_accessible %}<a href='{{ project.trac_url }}svn'>SVN</a>, {% endif %}<a href='{{ project.trac_url}}roadmap'>roadmap</a>,  <a href='{{ project.trac_url }}newticket'>create ticket</a>)</span>
                                 {% endif %}
+                                 
                                 </li>
                             {% endfor %}
                             </ul>

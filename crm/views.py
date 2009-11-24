@@ -70,6 +70,13 @@ def dashboard(request):
                 'status',
                 'type',
             ).exclude(status__label__in=('Closed', 'Complete'))
+            from timepiece import models as timepiece
+            svn_accessible = timepiece.Project.objects.filter(
+                contacts=request.contact,
+                project_relationships__types__slug__startswith='svn-'
+            ).values_list('trac_environment', flat=True).distinct()
+            for project in projects:
+                project.svn_accessible = project.trac_environment in svn_accessible
         else:
             projects = []
     else:
