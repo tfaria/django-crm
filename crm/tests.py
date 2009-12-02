@@ -16,6 +16,8 @@
 import cStringIO
 import xmlrpclib
 import unittest
+import string
+import random
 from xml.parsers.expat import ExpatError
 
 from django.conf import settings
@@ -23,10 +25,84 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission, Group
 from django.test import Client, TestCase
 from django.contrib.contenttypes.models import ContentType
+from django.template.defaultfilters import slugify
+from django.template import RequestContext
+from django import forms
 from django.core import mail
 
 from crm import models as crm
 from contactinfo import models as contactinfo
+
+
+class CrmDataTestCase(TestCase):
+    def random_string(self, length=255, extra_chars=''):
+        chars = string.letters + extra_chars
+        return ''.join([random.choice(chars) for i in range(length)])
+    
+    def find_forms(self, o, depth=0, max_depth=5):
+        """
+        Recursively search through a context for all the forms in that context,
+        up to max_depth and return a distinct set of those forms.
+        """
+        # use a set to avoid duplicate results
+        result = set()
+        if depth > max_depth:
+            return result
+        if isinstance(o, (list, tuple, set, RequestContext)):
+            for item in o:
+                result.update(self.find_forms(item, depth=depth+1))
+        elif isinstance(o, dict):
+            for k, v in o.iteritems():
+                result.update(self.find_forms(v, depth=depth+1))
+        elif isinstance(o, forms.Form):
+            result.add(o)
+        return result
+    
+    def assertNoFormErrors(self, response):
+        """
+        Make sure no form errors appear in the response.
+        """
+        forms = self.find_forms(response.context)
+        errors = [form.errors for form in forms if form.errors]
+        self.assertEqual(len(errors), 0, 'Form errors: %s' % errors)
+    
+    def assertFormErrors(self, response):
+        """
+        Make sure one or more form errors appear in the response.
+        """
+        forms = self.find_forms(response.context)
+        errors = [form.errors for form in forms if form.errors]
+        self.assertTrue(len(errors) > 0)
+
+    def create_relationship(self, data={}):
+        defaults = {}
+        defaults.update(data)
+        return crm.ContactRelationship.objects.create(**defaults)
+        
+    def create_person(self, data={}):
+        first_name = self.random_string(20)
+        last_name = self.random_string(20)
+        defaults = {
+            'type': 'individual',
+            'first_name': first_name,
+            'last_name': last_name,
+            'sort_name': '-'.join([last_name, first_name]),
+            'slug': slugify(' '.join([first_name, last_name])),
+        }
+        defaults.update(data)
+        return crm.Contact.objects.create(**defaults)
+    
+    def create_business(self, data={}):
+        name = self.random_string(30, extra_chars=' ')
+        defaults = {
+            'type': 'business',
+            'name': name,
+            'sort_name': name,
+            'slug': slugify(name),
+        }
+        defaults.update(data)
+        return crm.Contact.objects.create(**defaults)
+
 
 class TestTransport(xmlrpclib.Transport):
     """ Handles connections to XML-RPC server through Django test client."""
@@ -156,7 +232,7 @@ class ContactTestCase(TestCase):
             u'location_phones-2-number': [u'']
         }
     
-    def testEmailForm(self):
+    def testEmailContactForm(self):
         url = reverse('email_contact', args=[self.contact.slug])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
