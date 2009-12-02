@@ -71,6 +71,7 @@ class Contact(models.Model):
         blank=True,
     )
     
+    # related_names ending in '+' will be ignored/hidden by Django
     contacts = models.ManyToManyField(
         'self',
         through='ContactRelationship',
@@ -198,6 +199,19 @@ class ContactRelationship(models.Model):
     
     class Meta:
         unique_together = ('from_contact', 'to_contact')
+        
+    def save(self, *args, **kwargs):
+        create_mirror = kwargs.pop('create_mirror', True)
+        super(ContactRelationship, self).save(*args, **kwargs)
+        if create_mirror:
+            mirror, created = ContactRelationship.objects.get_or_create(
+                from_contact=self.to_contact,
+                to_contact=self.from_contact,
+            )
+            mirror.types = self.types.all()
+            mirror.start_date = self.start_date
+            mirror.end_date = self.end_date
+            mirror.save(create_mirror=False)
 
     def __unicode__(self):
         return "%s's relationship to %s" % (

@@ -192,39 +192,6 @@ class BusinessForm(forms.ModelForm):
         return instance
 
 
-class EmailForm(forms.Form):
-    to = forms.ChoiceField()
-    memo = forms.CharField(max_length=4096, widget=forms.Textarea)
-    
-    def clean_to(self):
-        try:
-            return crm.Contact.objects.get(pk=self.cleaned_data['to'])
-        except crm.Contact.DoesNotExist:
-            raise forms.ValidationError(_(u'That is not a valid contact.'))
-        
-        return self.cleaned_data['to']
-    
-    def __init__(self, *args, **kwargs):
-        search = None
-        
-        business = kwargs.pop('business', None)
-        project = kwargs.pop('project', None)
-        
-        if project:
-            # ignore business contacts if a project is set
-            search = Q(contact_projects=project)
-        elif business:
-            search = Q(businesses=business)
-        
-        forms.Form.__init__(self, *args, **kwargs)
-        
-        if search:
-            self.fields['to'].choices = []
-            for contact in crm.Contact.objects.filter(search):
-                choice = (contact.id, "%s (%s)" % (contact.get_full_name(), contact.email))
-                self.fields['to'].choices.append(choice)
-
-
 class AssociateContactForm(forms.Form):
     contact = AutoCompleteSelectField('contact')
     
@@ -345,16 +312,6 @@ class ContactRelationshipForm(forms.ModelForm):
             choices=self.fields['types'].choices
         )
         self.fields['types'].help_text = ''
-    
-    def save(self):
-        instance = super(ContactRelationshipForm, self).save(commit=True)
-        mirror, created = crm.ContactRelationship.objects.get_or_create(
-            from_contact=instance.to_contact,
-            to_contact=instance.from_contact,
-        )
-        mirror.types = instance.types.all()
-        mirror.save()
-        return instance
 
 
 class EmailContactForm(forms.Form):
