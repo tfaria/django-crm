@@ -98,7 +98,7 @@ def callerid(number):
     number = '-'.join(parts)
     
     try:
-        user = User.objects.get(profile__locations__phones__number=number)
+        user = User.objects.get(contacts__locations__phones__number=number)
         return user.get_full_name()
     except User.DoesNotExist:
         try:
