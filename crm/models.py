@@ -119,8 +119,8 @@ class Contact(models.Model):
         except ImportError:
             pass
         has_perms = user.has_perms((
-            'crm.add_profile',
-            'crm.change_profile',
+            'crm.add_contact',
+            'crm.change_contact',
         ))
         return (has_membership or has_perms)
     
