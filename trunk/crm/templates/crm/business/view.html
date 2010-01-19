@@ -72,31 +72,4 @@
     {% endif %}
 </table>
 
-{% ifequal business.business_projects.count 0 %}
-	<p>No projects exist for this {% trans "business" %}.  <a href='{% url create_project business_id=business.id %}'>Create one now...</a></p>
-{% else %}
-	<h3>Projects</h3>
-	<table class='businesses'>
-		<tr>
-			<th>Name</th>
-			<th>Type</th>
-			<th>Status</th>
-			<th>Point Person</th>
-			<th>Description</th>
-		</tr>
-		{% for project in business.business_projects.all %}
-		<tr>
-			<td><a href='{% url view_project business_id=business.id,project_id=project.id %}'>{{ project.name }}</a></td>
-			<td>{{ project.type }}</td>
-			<td>{{ project.status }}</td>
-			<td>{{ project.point_person }}</td>
-			<td>{{ project.description }}</td>
-		</tr>
-		{% endfor %}
-	</table>
-	<p>
-		<a href='{% url create_project business_id=business.id %}'>New project for {{ business }}...</a>
-	</p>
-{% endifequal %}
-
 {% endblock %}

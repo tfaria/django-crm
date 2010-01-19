@@ -49,17 +49,6 @@
 {% endif %}
 </table>
 
-{% if perms.crm.view_project %}
-    {% ifnotequal contact.contact_projects.count 0 %}
-        <h3>Projects</h3>
-        <ul class='projects person'>
-        {% for project in contact.contact_projects.all.select_related %}
-            <li><a href='{% url view_project business_id=project.business.id,project_id=project.id %}'>{{ project.name }}</a> ({{ project.business.name }})</li>
-        {% endfor %}
-        </ul>
-    {% endifnotequal %}
-{% endif %}
-
 {% if perms.crm.view_profile %}
     {% ifnotequal contact.business_relations.count 0 %}
         <h3>Businesses</h3>
