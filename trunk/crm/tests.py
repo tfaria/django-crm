@@ -124,8 +124,6 @@ class TestTransport(xmlrpclib.Transport):
             follow=True,
         )
         res = cStringIO.StringIO(response.content)
-        print response
-        print response.content
         res.seek(0)
         return self.parse_response(res)
 
