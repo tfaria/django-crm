@@ -1,6 +1,8 @@
 from django.conf.urls.defaults import *
 from django.conf import settings
 
+from crm.xmlrpc import rpc_handler
+
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 admin.autodiscover()
@@ -10,6 +12,8 @@ urlpatterns = patterns('',
     (r'^crm/', include('crm.urls')),
     (r'^contactinfo/', include('contactinfo.urls')),
     (r'^ajax/', include('ajax_select.urls')),
+    
+    url(r'^xml-rpc/', rpc_handler, name='xml_rpc'),
 
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs' 
     # to INSTALLED_APPS to enable admin documentation:
