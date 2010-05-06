@@ -91,9 +91,7 @@ class Contact(models.Model):
     description = models.TextField(blank=True)
     notes = models.TextField(blank=True)
     picture = models.ImageField(null=True, blank=True, max_length=1048576, upload_to="picture/profile/")
-    
-    # used for migration
-    business_id = models.IntegerField(null=True, blank=True, unique=True)
+    external_id = models.CharField(max_length=32, blank=True)
     
     objects = models.Manager()
     
@@ -215,8 +213,8 @@ class ContactRelationship(models.Model):
 
     def __unicode__(self):
         return "%s's relationship to %s" % (
-            self.contact_a,
-            self.contact_b,
+            self.from_contact,
+            self.to_contact,
         )
 
 
