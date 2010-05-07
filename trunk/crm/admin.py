@@ -67,3 +67,12 @@ class LoginRegistrationAdmin(admin.ModelAdmin):
     order_by = ('date',)
 admin.site.register(crm.LoginRegistration, LoginRegistrationAdmin)
 
+
+class ContactRelationshipAdmin(admin.ModelAdmin):
+    list_display = ('id', 'from_contact', 'to_contact', 'start_date',
+                    'end_date')
+    raw_id_fields = ('from_contact', 'to_contact')
+    list_filter = ('start_date', 'end_date',)
+    order_by = ('start_date',)
+admin.site.register(crm.ContactRelationship, ContactRelationshipAdmin)
+
