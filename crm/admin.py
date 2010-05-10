@@ -53,7 +53,7 @@ def send_account_activation_email(modeladmin, request, queryset):
 class ContactAdmin(admin.ModelAdmin):
     search_fields = ('first_name', 'last_name', 'name', 'email')
     raw_id_fields = ('user', 'locations')
-    list_display = ('id', 'type', 'name', 'first_name', 'last_name', 'email')
+    list_display = ('id', 'type', 'name', 'first_name', 'last_name', 'email', 'external_id')
     list_filter = ('type',)
     order_by = ('sortname',)
     actions = [send_account_activation_email]
