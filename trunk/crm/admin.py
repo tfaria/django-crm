@@ -40,6 +40,11 @@ class RelationshipType(admin.ModelAdmin):
 admin.site.register(crm.RelationshipType, RelationshipType)
 
 
+class InteractionAdmin(admin.ModelAdmin):
+    pass
+admin.site.register(crm.Interaction, InteractionAdmin)
+
+
 def send_account_activation_email(modeladmin, request, queryset):
     selected = request.POST.getlist(admin.ACTION_CHECKBOX_NAME)
     selected = ["ids=%d" % pk for pk in selected]
