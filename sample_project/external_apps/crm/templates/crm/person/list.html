@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}People{% endblock %}
+
+{% block breadcrumb %}
+    {{ block.super }}
+    {% load breadcrumb_tags %}
+    {% add_crumb 'People' 'list_people' %}
+{% endblock %}
+
+{% block content %}
+<h2>People</h2>
+{% if perms.crm %}
+	<ul class='header-actions-left'>
+	{% if perms.auth.add_user %}
+		<li><a href='{% url create_person %}'>Create Person</a></li>
+	{% endif %}
+	</ul>
+{% endif %}
+
+<form class='search' accept-charset='UTF-8' method='get' action=''>
+	<ul>
+		{{ form.as_ul }}
+		<li class='form-buttons'>
+			<input class='large-button' type='submit' name='submit' value='Search &rarr;' />
+		</li>
+	</ul>
+</form>
+
+{% load pagination_tags %}
+{% autopaginate people %}
+
+{% paginate %}
+<table class='people'>
+	<tr>
+		<th>Name</th>
+		<th>E-mail</th>
+		<th>Phone Number(s)</th>
+		<th>Notes</th>
+	</tr>
+	{% for person in people %}
+	<tr>
+		<td class='name'><a href='{% url view_person person_id=person.id %}'>{{ person.get_full_name }}</a></td>
+		<td><a href='mailto:{{ person.email }}'>{{ person.email }}</a></td>
+		<td class='phone'>
+    {% for location in person.locations.all %}
+        {% for phone in location.phones.all %}
+			<a href='sip://1-{{ phone }}'>{{ phone }}</a> ({{ phone.type }})<br />
+		{% endfor %}
+    {% endfor %}
+		</td>
+		<td>{{ person.notes }}</td>
+	</tr>
+	{% endfor %}
+</table>
+{% paginate %}
+
+{% endblock %}

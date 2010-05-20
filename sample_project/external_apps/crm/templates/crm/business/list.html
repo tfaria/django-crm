@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}Businesses{% endblock %}
+
+{% block breadcrumb %}
+    {{ block.super }}
+    {% load breadcrumb_tags %}
+    {% add_crumb 'Businesses' 'list_businesses' %}
+{% endblock %}
+
+{% block content %}
+<h2>{% trans "Businesses" %}</h2>
+<ul class='header-actions-left'>
+{% if perms.crm.add_business %}
+	<li><a href='{% url create_business %}'>Create {% trans "business" %}</a></li>
+{% endif %}
+</ul>
+
+<form class='search' accept-charset='UTF-8' method='get' action=''>
+	<ul>
+		{{ form.as_ul }}
+		<li class='form-buttons'>
+			<input class='large-button' type='submit' name='submit' value='Search &rarr;' />
+		</li>
+	</ul>
+</form>
+
+{% load pagination_tags %}
+{% autopaginate businesses %}
+
+{% ifequal businesses.count 0 %}
+	<p>
+		Your search &mdash; {{ request.REQUEST.search }} &mdash; did not 
+		match any {% trans "businesses" %}. Return to the <a href='{% url list_businesses %}'>
+		{% trans "business" %} list</a> to start over or <a href='{% url create_business %}?name={{ request.REQUEST.search }}'>create</a> a new {% trans "business" %}.
+	</p>
+{% else %}
+{% paginate %}
+<table class='businesses'>
+	<tr>
+		<th>Name</th>
+		<th>Address</th>
+		<th>Notes</th>
+	</tr>
+	{% for business in businesses %}
+	<tr>
+		<td><a href='{% url view_business business_id=business.id %}'>{{ business.name }}</a></td>
+		<td>
+            {% for location in business.locations.all %}
+            {% for address in location.addresses.all %}
+                {{ address }} <br/>
+            {% endfor %}
+            {% endfor %}
+        </td>
+		<td>{{ business.notes }}</td>
+	</tr>
+	{% endfor %}
+</table>
+{% paginate %}
+{% endifequal %}
+
+{% endblock %}

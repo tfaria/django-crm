@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}New Account Registration{% endblock %}
+
+{% block content %}
+
+<h2>New Account Registration</h2>
+
+<p>To register for a new account, fill out the form below and click Go.  Your password will be emailed to you (and we won't use your email for any other purpose).</p>
+
+<form id='register-person' accept-charset='UTF-8' method='post' action=''>
+	<table class='vertical'>
+		{{ form }}
+		<tr>
+			<td>&nbsp;</td>
+			<td class='submit'>
+				<input type='button' value='Cancel' onclick='history.go(-1)' />
+				&nbsp;
+				<input type='submit' name='submit' value='Go &rarr;' />
+			</td>
+		</tr>
+	</table>
+</form>
+
+{% endblock %}

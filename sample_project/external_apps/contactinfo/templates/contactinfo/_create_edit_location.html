@@ -1,0 +1,30 @@
+<tbody class="form location_form">
+{% include 'contactinfo/_location_form.html' %}
+</tbody>
+
+<tbody class="form address_formset">
+{% include 'contactinfo/_address_formset.html' %}
+</tbody>
+
+<tbody class="form phone_formset">
+{% include 'contactinfo/_phone_formset.html' %}
+</tbody>
+
+<tbody style="display: none;">
+    <tr>
+        <td colspan="2">
+            <script type="text/javascript">
+            jQuery(function ($) {
+                $('tbody.address_formset').change(function (e) {
+                    // hide the form to enter a new address if an address exists already
+                    existing_fields = $('tbody.address_formset .field.existing-object').length;
+                    if (existing_fields > 0) {
+                        $('tbody.address_formset .field.new-object').hide();
+                    }
+                });
+                $('tbody.address_formset').change();
+            });
+            </script>
+        </td>
+    </tr>
+</tbody>

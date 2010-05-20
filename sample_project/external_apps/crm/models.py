@@ -258,10 +258,26 @@ class Interaction(models.Model):
     date = models.DateTimeField()
     type = models.CharField(max_length=15, choices=INTERACTION_TYPES)
     completed = models.BooleanField(default=False)
-    name = models.CharField(blank=True, max_length=80)
     memo = models.TextField(blank=True)
-    external_id = models.CharField(blank=True, max_length=15,)
+    cdr_id = models.TextField(null=True)
+    
     contacts = models.ManyToManyField(Contact, related_name='interactions')
+    
+    def src(self):
+        if self.cdr:
+            return self.cdr.src
+    src.short_description = 'Source'
+
+    def dst(self):
+        if self.cdr:
+            return self.cdr.dst
+    dst.short_description = 'Destination'
+
+    def duration(self):
+        if self.cdr:
+            time = self.cdr.duration / 60.0
+            return "%.2f minutes" % time
+    duration.short_description = 'Duration'
     
     class Meta:
         ordering = ['-date']

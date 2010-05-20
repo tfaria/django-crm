@@ -1,0 +1,6 @@
+This is a receipt of your message sent through an IAS Contact Form.
+
+Name: {{ name }}
+Email: {{ email }}
+
+{{ message|safe }}
