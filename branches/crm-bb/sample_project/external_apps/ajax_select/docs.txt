@@ -1,0 +1,222 @@
+
+This enables editing of ForeignKey, ManyToMany and simple text fields using the Autocomplete - jQuery plugin.
+
+Ajax selects will work in any normal form as well as in the admin.
+
+User experience:
+
+The user is presented with a text field.  They type a few characters of a name they are looking for, an ajax request is sent to the server, a search channel returns possible results.  Results are displayed as a drop down menu.
+
+
+A single view services all of the ajax search requests, delegating the searches to named channels.
+
+For instance the search channel 'contacts' would search for Contact models.  This channel can be used for both AutoCompleteSelect ( foreign key, single item ) and AutoCompleteSelectMultiple (many to many) fields. 
+
+Simple search channels can be automatically generated, you merely specify the model and the field to search against (see examples below).
+
+Custom search channels can be written when you need to do a more complex search, check the user's permissions, format the results differently or customize the sort order of the results.
+
+
+==Requirements==
+
+  * Django 1.0 +
+  * jquery 1.26 +
+  * Autocomplete - jQuery plugin 1.0.2 [http://bassistance.de/jquery-plugins/jquery-plugin-autocomplete/]
+  * jquery.autocomplete.css (included with Autocomplete)
+
+
+==Installation==
+
+install as a normal django app
+
+{{{
+INSTALLED_APPS = (
+                ...,
+                'ajax_select'
+                )
+}}}
+
+
+Make sure that these js/css files appear on your page:
+
+  * jquery-1.2.6.js
+  * jquery.autocomplete.js
+  * jquery.autocomplete.css
+
+There is one css class `.iconic` that is used in the html interface.  Example styling for that is in the iconic.css file.
+
+I like to use django-compress:
+
+{{{
+COMPRESS_CSS = {
+    'all': {
+        'source_filenames': (
+            ...
+            'shared/js/jqplugins/jquery.autocomplete.css',
+        ),
+        'output_filename': 'css/all_compressed.css',
+        'extra_context': {
+            'media': 'screen,projection',
+        },
+    },
+}
+
+COMPRESS_JS = {
+    'all': {
+        'source_filenames': (
+            'shared/jquery_ui/jquery-1.2.6.js',
+            'shared/js/jqplugins/jquery.autocomplete.js',
+            ),
+        'output_filename': 'js/all_compressed.js',
+    },
+}
+}}}
+
+
+
+
+
+in your `settings.py` define the channels in use on the site:
+
+{{{
+AJAX_LOOKUP_CHANNELS = {
+    # the simplest case, pass a DICT with the model and field to search against :
+    'track' : dict(model='music.track',search_field='title'),
+    # this generates a simple channel
+    # specifying the model Track in the music app, and searching against the 'title' field
+
+    # or write a custom search channel and specify that using a TUPLE
+    'contact' : ('peoplez.lookups', 'ContactLookup'),
+    # this specifies to look for the class `ContactLookup` in the `peoplez.lookups` module
+}
+}}}
+
+Custom search channels can be written when you need to do a more complex search, check the user's permissions (which contacts they are allowed to see), format the results differently or customize the sort order of the results.   Search channel objects should implement the 4 methods shown in the following example.
+
+`peoplez/lookups.py`
+{{{
+from peoplez.models import Contact
+from django.db.models import Q
+
+class ContactLookup(object):
+
+    def get_query(self,q,request):
+        """ return a query set.  you also have access to request.user if needed """
+        return Contact.objects.filter(Q(name__istartswith=q) | Q(fname__istartswith=q) | Q(lname__istartswith=q) | Q(email__icontains=q))
+
+    def format_result(self,contact):
+        """ a more verbose display, used in the search results display.  may contain html and multi-lines """
+        return u"%s %s %s (%s)" % (contact.fname, contact.lname,contact.name,contact.email)
+
+    def format_item(self,contact):
+        """ simple display of an object when it is displayed in the list of currently selected objects """
+        return unicode(contact)
+
+    def get_objects(self,ids):
+        """ given a list of ids, return the objects ordered as you would like them on the admin page.
+            this is for displaying the currently selected items (in the case of a ManyToMany field)
+        """
+        return Contact.objects.filter(pk__in=ids).order_by('name','lname')
+}}}
+
+
+
+
+include the lookup url in your site's `urls.py`
+
+{{{
+    (r'^ajax/', include('ajax_select.urls')),
+}}}
+
+
+==Example==
+
+for an example model:
+
+{{{
+class ContactMailing(models.Model):
+    """ can mail to multiple contacts, has one author """
+    contacts = models.ManyToManyField(Contact,blank=True)
+    author = models.ForeignKey(Contact,blank=False)
+    ...
+}}}
+
+
+in the `admin.py` for this app:
+
+{{{
+from ajax_select import make_ajax_form
+
+class ContactMailingAdmin(Admin):
+    form = make_ajax_form(ContactMailing,dict(author='contact',contacts='contact'))
+}}}
+
+`make_ajax_form( model, fieldlist )` is a factory function which will insert the ajax powered form field inputs 
+so in this example the `author` field (ForeignKey) uses the 'contact' channel
+and the `contacts` field (ManyToMany) also uses the 'contact' channel
+
+
+If you need to write your own form class then specify that form for the admin as usual:
+
+{{{
+from forms import ContactMailingForm
+
+class ContactMailingAdmin(admin.ModelAdmin):
+    form = ContactMailingForm
+
+admin.site.register(ContactMailing,ContactMailingAdmin)
+}}}
+
+in `forms.py` for that app:
+
+{{{
+from ajax_select.fields import AutoCompleteSelectMultipleField, AutoCompleteSelectField
+
+class ContactMailingForm(models.ModelForm):
+
+    # declare a field and specify the named channel that it uses
+    contacts = AutoCompleteSelectMultipleField('contact', required=False)
+    author = AutoCompleteSelectField('contact', required=False)
+
+}}}
+
+
+
+==customizing the html or javascript==
+
+django's `select_template` is used to choose the template to render the widget's interface:
+
+    `autocompleteselect_{channel}.html` or `autocompleteselect.html`
+
+So by writing a template `autocompleteselect_{channel}.html` you can customize the interface just for that channel.
+
+There is one block 'help' that allows you to inherit from the main widget template.
+
+=On item removed=
+
+For AutoCompleteSelectMultiple when you remove an item (by clicking the X) a "killed" trigger/signal/dispatch/handler is fired on the P element that holds the selected ("on-deck") items.
+
+{{{
+$("#{{html_id}}_on_deck").trigger("killed"); // run killed() on {{html_id}}_on_deck if it is defined
+}}}
+
+this is the element that receives the trigger:
+{{{
+<p id="{{html_id}}_on_deck">
+}}}
+
+see:
+http://docs.jquery.com/Events/trigger
+
+
+
+==Planned Improvements==
+
+  * integration with (+) add item via popup in django-admin
+  * including of media will be improved to use field/admin's Media but it would be preferable if that can be integrated with django-compress
+  * ajax niceness ("searching...")
+  * help_text is still not showing
+  * let channel customize the interface's help text
+  * make it work within inline many to many fields (when the inlines themselves have lookups)
+
+

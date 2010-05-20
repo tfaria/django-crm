@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}{% if user %}Update {{ user.get_full_name }}{% else %}Add new person{% endif %}{% endblock %}
+
+{% block javascript %}
+{{ location_form.media }}
+{% endblock %}
+
+{% block css %}
+<link charset='UTF-8' rel='stylesheet' type='text/css' media='screen' href='{{ MEDIA_URL }}css/django-contactinfo.css' />
+{% endblock %}
+
+{% block content %}
+
+<h2>{% if user %}Update {{ user.get_full_name }}{% else %}Add new person{% endif %}</h2>
+
+<form id='create-edit-person' accept-charset='UTF-8' method='post' action=''>
+    <table class='vertical'>
+        {% include 'contactinfo/_create_edit_location.html' %}
+        <tfoot>
+            <tr>
+                <td>&nbsp;</td>
+                <td class='submit'>
+                    <input type='button' value='Cancel' onclick='history.go(-1)' />
+                    &nbsp;
+                    <input type='submit' name='submit' value='{% if user %}Update{% else %}Create{% endif %} &rarr;' />
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</form>
+
+{% endblock %}

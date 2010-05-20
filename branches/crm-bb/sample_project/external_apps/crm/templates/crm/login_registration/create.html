@@ -1,0 +1,23 @@
+{% extends 'admin/index.html' %}
+{% block title %}Send Registration Email{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="/admin/">Home</a> &rsaquo; Send Registration Email
+</div>
+{% endblock %}
+
+{% block sidebar %}{% endblock %}
+
+{% block content %}
+    <h1>Send Registration Email</h1>
+    <br />
+    <form action="" method="post" accept-charset="utf-8">
+        <table>
+            {{ form }}
+        </table>
+        <p>Sending email may take some time.  Please click button just once and be patient.</p>
+        <p><input type="submit" value="Send Email(s) &rarr;" name="submit"></p>
+    </form>
+    
+{% endblock %}

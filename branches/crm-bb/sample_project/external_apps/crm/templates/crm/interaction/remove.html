@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load markup %}
+
+{% block title %}Remove {{ interaction }}{% endblock %}
+
+{% block content %}
+	<h2>Remove {{ interaction }}</h2>
+	<p>
+		Are you sure you want to remove the {{ interaction.type }} interaction dated 
+		{{ interaction.date|date:"l M t, Y" }} with the following memo?
+	</p>
+	<p>{{ interaction.memo|markdown }}</p>
+	<form accept-charset='UTF-8' method='post' action=''>
+		<table border='0' cellspacing='0' cellpadding='0' class='spacing'>
+			<tr>
+				<td class='submit'>
+					<input type='button' value='Cancel' onclick='history.go(-1)'/>
+					&nbsp;
+					<input type='submit' name='submit' value='Remove &rarr;' />
+				</td>
+			</tr>
+		</table>
+	</form>
+{% endblock %}

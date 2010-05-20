@@ -1,0 +1,74 @@
+{% extends "crm/person/list.html" %}
+{% load markup %}
+
+{% block breadcrumb %}
+    {{ block.super }}
+    {% load breadcrumb_tags %}
+    {% if contact %}
+        {% add_crumb contact 'view_person' contact.pk %}
+    {% endif %}
+{% endblock %}
+
+{% block title %}{{ contact }}{% endblock %}
+
+{% block content %}
+<h2>{{ contact }}</h2>
+<ul class='header-actions-left'>
+{% if can_edit %}
+	<li><a href='{% url edit_person person_id=contact.id %}?next={% url view_person person_id=contact.id %}'>Edit Person</a></li>
+{% endif %}
+</ul>
+
+<table class='vertical' id='person-profile'>
+{% if contact.email %}
+    <tr>
+        <th>Email:</th>
+        <td><a href='mailto:{{ contact.email }}'>{{ contact.email }}</a> (<a href='{% url email_contact contact.slug %}'>Send Email)</a></td>
+    </tr>
+{% endif %}
+{% for location in contact.locations.all %}
+    {% for address in location.addresses.all %}
+        <tr>
+            <th>{{ location.type|capfirst }} Address:</th>
+            <td>{{ address }}</td>
+        </tr>
+    {% endfor %}
+
+    {% for phone in location.phones.all %}
+        <tr>
+            <th>{{ location.type|capfirst }} {{ phone.type|capfirst }}:</th>
+            <td><a href='sip://1-{{ phone }}'>{{ phone }}</a></td>
+        </tr>
+    {% endfor %}
+{% endfor %}
+{% if contact.notes %}
+    <tr>
+        <th>Notes:</th>
+        <td>{{ contact.notes|textile }}</td>
+    </tr>
+{% endif %}
+</table>
+
+{% if perms.crm.view_profile %}
+    {% ifnotequal contact.business_relations.count 0 %}
+        <h3>Businesses</h3>
+        <ul class='businesses person'>
+        {% for business in contact.business_relations.select_related %}
+            <li><a href='{% url view_business business_id=business.id %}'>{{ business.name }}</a></li>
+        {% endfor %}
+        </ul>
+    {% endifnotequal %}
+{% endif %}
+
+{% if perms.crm.view_interaction %}
+    <h3>Recent Interactions</h3>
+    <ul class='header-actions-left'>
+    {% if perms.crm.add_interaction %}
+    	<li><a href='{% url create_interaction person_id=contact.id %}?next={{ request.path }}'>New Interaction</a></li>
+    {% endif %}
+    </ul>
+    {% include 'crm/interaction/_list.html' %}
+{% endif %}
+
+<br style='clear: both;' />
+{% endblock %}

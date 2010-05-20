@@ -1,0 +1,9 @@
+{% for field in location_form %}
+<tr class='field {{ field.name }} {% if location_form.instance.id %}existing-object{% else %}new-object{% endif %}{% if field.is_hidden %} hidden{% endif %}{% ifequal field.label "Delete" %} delete{% endifequal %}'>
+    <th class='label'>{{ field.label_tag }}:</th>
+    <td class='value'>
+        {{ field.errors }}
+        {{ field }}
+    </td>
+</tr>
+{% endfor %}

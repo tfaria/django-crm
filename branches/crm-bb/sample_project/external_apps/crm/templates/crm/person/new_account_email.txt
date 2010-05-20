@@ -1,0 +1,13 @@
+{% ifnotequal user.first_name '' %}{{ user.first_name }},
+{% endifnotequal %}
+Someone (hopefully you) just registered for a new account using
+this email address ({{ user.email }}).  Your password can be found below.
+
+Username: {{ user.username }}
+Password: {{ password }}
+
+To login and change your password now, visit:
+
+{{ app_url_base }}{% url change_password %}?next={% url crm_dashboard %}
+
+Thanks!

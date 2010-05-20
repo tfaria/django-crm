@@ -1,0 +1,5 @@
+BEGIN;
+DROP TABLE timepiece_projectrelationship_types;
+ALTER TABLE crm_projectrelationship_types RENAME TO timepiece_projectrelationship_types;
+ALTER SEQUENCE crm_projectrelationship_id_seq RENAME TO timepiece_projectrelationship_id_seq;
+COMMIT;

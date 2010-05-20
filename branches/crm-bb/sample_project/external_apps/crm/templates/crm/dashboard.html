@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+{% load humanize %}
+<div id="right-panel">
+	<div id="inner-right-panel">
+
+	</div>
+</div>
+
+<div id="left-panel">
+	<div id="inner-left-panel">
+		<h2>Upcoming Interactions</h2>
+	{% if perms.crm.view_interaction %}
+		<ul class='header-actions-left'>
+			<li><a href='{% url list_interactions %}'>All Interactions</a></li>
+		</ul>
+	{% endif %}
+		{% with upcoming_interactions as interactions %}
+		{% include "crm/interaction/_list.html" %}
+		{% endwith %}
+		
+		<h2>Recent Interactions</h2>
+	{% if perms.crm.view_interaction %}
+		<ul class='header-actions-left'>
+			<li><a href='{% url list_interactions %}'>All Interactions</a></li>
+		</ul>
+	{% endif %}
+		{% with recent_interactions as interactions %}
+		{% include "crm/interaction/_list.html" %}
+		{% endwith %}
+	</div>
+</div>
+
+{% endblock %}

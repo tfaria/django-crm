@@ -1,0 +1,39 @@
+{% load humanize %}
+{% load markup %}
+
+{% ifequal interactions.count 0 %}
+<p>No interactions to display!{% if perms.crm.create_interaction %}  You can create a new interaction by using Quick Search to navigate to the contact you want to schedule or record a meeting with and clicking "New Interaction."{% endif %}</p>
+{% else %}
+<table id="list-interactions">
+{% for interaction in interactions %}
+	<tr id='interaction-{{ interaction.id }}' class='date-type'>
+		<td colspan='2' class='date'>
+			<ul class='header-actions-left right'>
+				{% if perms.crm.change_interaction %}<li><a href="{% url edit_interaction interaction_id=interaction.id %}?next={{ request.path }}">Edit</a></li>{% endif %}
+				{% if perms.crm.delete_interaction %}<li><a href="{% url remove_interaction interaction_id=interaction.id %}?next={{ request.path }}">Remove</a></li>{% endif %}
+			</ul>
+			<h3>{{ interaction.date|naturalday|capfirst }} ({{ interaction.type }})</h3>
+		</td>
+	</tr>
+	<tr id='interaction-{{ interaction.id }}' class='body'>
+		<td class='project'>
+			{% if interaction.project %}<strong>{{ interaction.project }}</strong>{% endif %}
+		
+			<ul class="small">
+			{% for contact in interaction.contacts.all %}
+				<li>{{ contact.get_full_name }}</li>
+			{% endfor %}
+			</ul>
+		</td>
+		<td class='memo'>
+			{{ interaction.memo|markdown }}
+			<p class="small">{{ interaction.contacts_images }}</p>
+			{% if interaction.duration %}
+				<br />
+				{{ interaction.duration }}
+			{% endif %}
+		</td>
+	</tr>
+{% endfor %}
+</table>
+{% endifequal %}

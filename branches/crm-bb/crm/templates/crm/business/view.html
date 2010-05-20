@@ -1,0 +1,75 @@
+{% extends "crm/business/list.html" %}
+{% load i18n %}
+{% load markup %}
+
+{% block title %}{{ business }}{% endblock %}
+
+{% block breadcrumb %}
+    {{ block.super }}
+    {% load breadcrumb_tags %}
+    {% if business %}
+        {% add_crumb business 'view_business' business.pk %}
+    {% endif %}
+{% endblock %}
+
+{% block javascript %}{% endblock %}
+
+{% block content %}
+<h2>{{ business }}</h2>
+<ul class='header-actions-left'>
+{% if perms.crm.change_business %}
+	<li><a href='{% url edit_business business_id=business.id %}?next={% url view_business business_id=business.id %}'>Edit</a></li>
+{% endif %}
+</ul>
+
+<div id='sidebar'>
+	<h3>Contacts</h3>
+	<ul class='people'>
+	{% ifnotequal business.individual_relations.count 0 %}
+	{% for contact in business.individual_relations.select_related %}
+		<li>
+			<a href='{% url view_person person_id=contact.id %}'>{{ contact.get_full_name }}</a>
+			<a title="Edit {{ contact.get_full_name }}'s relationship to {{ business }}" href='{% url edit_business_relationship business_id=business.id,user_id=contact.id %}?next={% url view_business business_id=business.id %}'><img alt="Edit {{ contact.get_full_name }}'s relationship to {{ business }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
+            <a title='Remove {{ contact.get_full_name }}' href='{% url associate_contact business_id=business.id,user_id=contact.id,action="remove" %}?next={% url view_business business_id=business.id %}'><img alt='Remove {{ contact.get_full_name }}' src='{{ FAMFAMFAM_URL }}delete.png' /></a>
+		</li>
+	{% endfor %}
+	{% endifnotequal %}
+    </ul>
+	<form id="add-contact" action='{% url associate_contact business_id=business.id,action="add" %}?next={% url view_business business_id=business.id %}' method="post" accept-charset="utf-8">
+		<div class="field-wrapper">
+		    {{ add_contact_form.contact }}
+			<input type="submit" name="submit" value="Add" id="submit" />
+		</div>
+	</form>
+</div>
+
+<table class='vertical' id='business-profile'>
+    {% for location in business.locations.all %}
+        {% for address in location.addresses.all %}
+            <tr>
+                <th>{{ location.type|capfirst }} Address:</th>
+                <td>{{ address }}</td>
+            </tr>
+        {% endfor %}
+        {% for phone in location.phones.all %}
+            <tr>
+                <th>{{ location.type|capfirst }} {{ phone.type|capfirst }}:</th>
+                <td><a href='sip://1-{{ phone }}'>{{ phone }}</a></td>
+            </tr>
+        {% endfor %}
+    {% endfor %}
+    {% if business.description %}
+        <tr>
+            <th>Description:</th>
+            <td>{{ business.description|textile }}</td>
+        </tr>
+    {% endif %}
+    {% if business.notes %}
+        <tr>
+            <th>Notes:</th>
+            <td>{{ business.notes|textile }}</td>
+        </tr>
+    {% endif %}
+</table>
+
+{% endblock %}
