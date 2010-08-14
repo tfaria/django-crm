@@ -132,7 +132,7 @@ class Contact(models.Model):
     def _get_exchange_types(self):
         # import here to avoid circular import
         try:
-            from ledger.models import ExchangeType
+            from minibooks.ledger.models import ExchangeType
             return ExchangeType.objects.filter(
                 business_types__businesses=self
             )

@@ -20,7 +20,7 @@ from SimpleXMLRPCServer import SimpleXMLRPCDispatcher
 from django.conf import settings
 from django.http import HttpResponse
 from django.contrib import auth
-from django.forms.fields import email_re
+from django.core.validators import email_re
 from django.contrib.auth.models import User
 
 from crm import models as crm

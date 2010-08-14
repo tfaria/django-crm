@@ -91,7 +91,7 @@ def dashboard(request):
     }
     
     try:
-        from ledger.models import Exchange
+        from minibooks.ledger.models import Exchange
         # there are no permissions on this view, so all DB access
         # must filter by request.user
         context['recent_exchanges'] = Exchange.objects.filter(
@@ -443,7 +443,7 @@ def view_business(request, business):
     }
     
     try:
-        from ledger.models import Exchange
+        from minibooks.ledger.models import Exchange
         exchanges = Exchange.objects.filter(business=business)
         if business.business_projects.count() > 0:
             exchanges = exchanges.filter(
