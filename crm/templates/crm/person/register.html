@@ -9,6 +9,7 @@
 <p>To register for a new account, fill out the form below and click Go.  Your password will be emailed to you (and we won't use your email for any other purpose).</p>
 
 <form id='register-person' accept-charset='UTF-8' method='post' action=''>
+    {% csrf_token %}
 	<table class='vertical'>
 		{{ form }}
 		<tr>

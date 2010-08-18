@@ -25,6 +25,7 @@
 <h2>{% if contact %}Update {{ contact }}{% else %}Add new person{% endif %}</h2>
 
 <form id='create-edit-person' accept-charset='UTF-8' method='post' action=''>
+    {% csrf_token %}
 	<table class='vertical'>
 		{% for form in forms %}
 			{{ form }}

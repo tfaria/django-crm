@@ -6,6 +6,7 @@
 <h2>Edit {{ user.get_full_name }}'s {{ business }} Relationship</h2>
 
 <form id="edit-business-relationship" action="" method="post" accept-charset="utf-8">
+    {% csrf_token %}
 	<table class='vertical'>
 		{{ relationship_form }}
 		<tr>
