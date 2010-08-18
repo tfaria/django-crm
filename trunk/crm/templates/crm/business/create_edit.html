@@ -34,6 +34,7 @@
 <h2>{% if not business %}Create {% trans "Business" %}{% else %}Edit {{ business }}{% endif %}</h2>
 
 <form id="create-edit-business" action="" method="post" accept-charset="utf-8">
+    {% csrf_token %}
 	<table class='vertical'>
 		{{ business_form }}
         {% include 'contactinfo/_create_edit_location.html' %}

@@ -29,6 +29,7 @@ from django.db import transaction
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import authenticate, login
 from django.core.mail import send_mass_mail, send_mail
+from django.views.decorators.csrf import csrf_exempt
 
 from contactinfo.helpers import create_edit_location
 from contactinfo import models as contactinfo
@@ -548,7 +549,7 @@ def edit_business_relationship(request, business, user_id):
     }
     return context
 
-
+@csrf_exempt
 @permission_required('crm.change_business')
 @permission_required('crm.change_project')
 @transaction.commit_on_success
