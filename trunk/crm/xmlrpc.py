@@ -22,6 +22,7 @@ from django.http import HttpResponse
 from django.contrib import auth
 from django.core.validators import email_re
 from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt
 
 from crm import models as crm
 from crm.decorators import has_perm_or_basicauth
@@ -39,6 +40,7 @@ except:
     dispatcher = SimpleXMLRPCDispatcher()
 
 
+@csrf_exempt
 @has_perm_or_basicauth('crm.access_xmlrpc', realm='django-crm XML-RPC Service')
 def rpc_handler(request):
     response = HttpResponse()
